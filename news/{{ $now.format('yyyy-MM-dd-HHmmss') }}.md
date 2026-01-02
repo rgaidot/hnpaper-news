@@ -1,0 +1,7 @@
+Le débat souligne la maturité croissante de Linux comme système d'exploitation de bureau, particulièrement pour le jeu vidéo, souvent jugé supérieur à Windows en performance et stabilité. Les utilisateurs apprécient sa confidentialité, sa personnalisation et l'absence de logiciels intrusifs. Cependant, des défis majeurs demeurent : les systèmes anti-triche au niveau du noyau bloquent de nombreux jeux compétitifs, des problèmes de compatibilité matérielle (cartes graphiques, gestion de l'énergie des ordinateurs portables) persistent, et des logiciels commerciaux clés (Adobe, CAO) manquent. Malgré l'enthousiasme, ces "angles vifs" freinent l'adoption massive, malgré le déclin perçu de l'expérience Windows.
+
+**Article en discussion :** "Analyse : 'Linux est bon maintenant, et si vous voulez vraiment posséder votre PC, faites de 2026 l'année de Linux sur votre bureau'"
+[https://www.pcgamer.com/software/linux/im-brave-enough-to-say-it-linux-is-good-now-and-if-you-want-to-feel-like-you-actually-own-your-pc-make-2026-the-year-of-linux-on-your-desktop/](https://www.pcgamer.com/software/linux/im-brave-enough-to-say-it-linux-is-good-now-and-if-you-want-to-feel-like-you-actually-own-your-pc-make-2026-the-year-of-linux-on-your-desktop/)
+
+**Discussion associée :** "Débat sur la viabilité de Linux comme système d'exploitation de bureau"
+[https://news.ycombinator.com/item?id=46457770](https://news.ycombinator.com/item?id=46457770)
