@@ -1,0 +1,18 @@
+title: HN Paper News
+description: Actualités automatisées depuis hnpaper (https://hnpaper-labs.gaidot.net/)
+theme: minima
+url: https://rgaidot.github.io
+baseurl: /hnpaper-news
+
+# Configuration des posts
+permalink: /posts/:year/:month/:day/:title/
+
+# Paramètres
+lang: fr
+timezone: Europe/Paris
+
+# Pagination
+paginate: 10
+paginate_path: "/page:num/"
+plugins:
+  - jekyll-paginate
