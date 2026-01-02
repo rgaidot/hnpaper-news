@@ -2,12 +2,6 @@
 layout: default
 ---
 
-# 📰 HN Paper News
-
-> Actualités tech automatisées depuis [hnpaper](https://hnpaper-labs.gaidot.net/)
-
----
-
 {% for post in site.posts limit:10 %}
 
 ### [{{ post.title }}]({{ post.url | relative_url }})
