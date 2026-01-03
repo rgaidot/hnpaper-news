@@ -13,3 +13,5 @@ layout: default
 ---
 
 {% endfor %}
+
+[HNPaper](https://hnpaper-labs.gaidot.net) by [Régis Gaidot](https://regis.gaidot.net)
