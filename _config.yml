@@ -1,8 +1,8 @@
-title: HN Paper News
-description: Actualités automatisées depuis hnpaper (https://hnpaper-labs.gaidot.net/)
+title: HNPaper News
+description: Actualités automatisées depuis hnpaper (https://hnpaper-labs.gaidot.net)
 theme: jekyll-theme-hacker
 url: https://rgaidot.github.io
-baseurl: /hnpaper-news
+baseurl: ""
 
 permalink: /posts/:year/:month/:day/:title/
 
