@@ -1,0 +1,78 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths({ paginate }) {
+  const allNews = await getCollection('news');
+  const sortedNews = allNews.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+  return paginate(sortedNews, { pageSize: 12 });
+}
+
+const { page } = Astro.props;
+---
+
+<Layout title={`Archives - Page ${page.currentPage}`}>
+  <div class="flex justify-between items-end mb-8 border-b-2 border-stone-200 pb-2">
+    <h2 class="text-2xl font-bold text-stone-800">Archives</h2>
+    <span class="text-sm font-sans text-stone-500">Page {page.currentPage} sur {page.lastPage}</span>
+  </div>
+
+  <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+    {
+      page.data.map((post) => (
+        <article class="bg-white rounded-none border border-stone-200 p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-300 flex flex-col">
+          <div class="mb-2 text-xs font-bold tracking-wider text-stone-400 uppercase">
+             {new Date(post.data.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </div>
+          
+          <h3 class="font-bold text-xl text-stone-900 leading-tight mb-3 group-hover:text-blue-700">
+            <a href={`/news/${post.slug}`} class="hover:underline decoration-2 decoration-blue-100 underline-offset-2">
+              {post.data.title}
+            </a>
+          </h3>
+          
+          <p class="text-stone-600 font-serif text-sm leading-relaxed mb-4 flex-grow line-clamp-4">
+            {post.body.split('---')[0]?.replace(/^#+\s/, '')}
+          </p>
+
+          <div class="mt-auto pt-4 border-t border-stone-100">
+             <a href={`/news/${post.slug}`} class="text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors">
+               Lire &rarr;
+             </a>
+          </div>
+        </article>
+      ))
+    }
+  </div>
+
+  <!-- Pagination Navigation -->
+  <nav class="flex justify-center items-center space-x-2 mt-16 font-sans">
+    {
+      page.url.prev ? (
+        <a href={page.url.prev} class="px-4 py-2 border border-stone-300 rounded hover:bg-stone-100 text-stone-700 transition-colors">
+          &larr; Précédent
+        </a>
+      ) : (
+        <span class="px-4 py-2 border border-stone-100 rounded text-stone-300 cursor-not-allowed">
+          &larr; Précédent
+        </span>
+      )
+    }
+    
+    <div class="hidden sm:flex space-x-1">
+       <span class="px-3 py-2 font-bold text-stone-900">Page {page.currentPage}</span>
+    </div>
+
+    {
+      page.url.next ? (
+        <a href={page.url.next} class="px-4 py-2 border border-stone-300 rounded hover:bg-stone-100 text-stone-700 transition-colors">
+          Suivant &rarr;
+        </a>
+      ) : (
+        <span class="px-4 py-2 border border-stone-100 rounded text-stone-300 cursor-not-allowed">
+          Suivant &rarr;
+        </span>
+      )
+    }
+  </nav>
+</Layout>

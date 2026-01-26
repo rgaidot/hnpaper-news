@@ -1,16 +1,43 @@
-# HNPaper News
+# Astro Starter Kit: Minimal
 
-Automated news from [HNPaper](https://hnpaper-labs.gaidot.net) published as a Jekyll site.
+```sh
+npm create astro@latest -- --template minimal
+```
 
-## Features
-- Daily posts generated automatically.
-- Pagination (10 per page).
-- French language support.
-- Hosted on GitHub Pages.
+> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
 
-## How it works
-The site is built with the **jekyll‑theme‑hacker** theme. Posts are stored in `_posts` and are rendered using Jekyll’s default layout.
+## 🚀 Project Structure
 
-## Deployment
-Push to the `main` branch triggers the GitHub Actions workflow defined in `.github/workflows/jekyll-gh-pages.yml`, which builds the site and deploys it to GitHub Pages.
+Inside of your Astro project, you'll see the following folders and files:
 
+```text
+/
+├── public/
+├── src/
+│   └── pages/
+│       └── index.astro
+└── package.json
+```
+
+Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+
+There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+
+Any static assets, like images, can be placed in the `public/` directory.
+
+## 🧞 Commands
+
+All commands are run from the root of the project, from a terminal:
+
+| Command                   | Action                                           |
+| :------------------------ | :----------------------------------------------- |
+| `npm install`             | Installs dependencies                            |
+| `npm run dev`             | Starts local dev server at `localhost:4321`      |
+| `npm run build`           | Build your production site to `./dist/`          |
+| `npm run preview`         | Preview your build locally, before deploying     |
+| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
+| `npm run astro -- --help` | Get help using the Astro CLI                     |
+
+## 👀 Want to learn more?
+
+Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
