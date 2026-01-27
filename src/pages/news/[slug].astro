@@ -22,16 +22,11 @@ const formattedDate = format(entry.data.date, 'EEEE d MMMM yyyy à HH:mm', { loc
   <article class="mx-auto max-w-3xl">
     <!-- Header de l'article -->
     <header class="mb-10 text-center border-b border-stone-200 pb-8">
-      <div class="text-sm font-bold tracking-widest text-blue-600 uppercase mb-3">
+      <h1 class="text-4xl sm:text-5xl font-black text-blue-600 leading-tight mb-6">
         {formattedDate}
-      </div>
-      <h1 class="text-4xl sm:text-5xl font-black text-stone-900 leading-tight mb-6">
-        {entry.data.title}
       </h1>
       <div class="flex justify-center items-center space-x-2 text-stone-500 text-sm italic">
         <span>Par {entry.data.author}</span>
-        <span>&bull;</span>
-        <span>HNPaper News</span>
       </div>
     </header>
 
