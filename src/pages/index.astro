@@ -17,14 +17,17 @@ const latestNews = sortedNews.slice(0, 10);
       latestNews.map((post, index) => (
         <article class={`bg-white rounded-xl border border-stone-200 p-6 shadow-lg hover:shadow-2xl hover:-translate-y-1 hover:border-blue-300 transition-all duration-300 flex flex-col ${index === 0 ? 'sm:col-span-2 sm:p-8 shadow-xl' : ''}`}>
           <div class="mb-3 flex items-center text-xs font-bold tracking-wider text-blue-600 uppercase">
-             {new Date(post.data.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-          </div>
-          
-          <h3 class={`font-bold text-stone-900 leading-tight mb-3 group-hover:text-blue-700 ${index === 0 ? 'text-3xl sm:text-4xl' : 'text-xl'}`}>
             <a href={`/news/${post.slug}`} class="hover:underline decoration-2 decoration-blue-100 underline-offset-2">
-              {post.data.title}
+              {new Date(post.data.date).toLocaleDateString('fr-FR', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZone: 'Europe/Paris'
+              })}
             </a>
-          </h3>
+          </div>
           
           <p class={`text-stone-600 font-serif leading-relaxed mb-4 flex-grow ${index === 0 ? 'text-lg' : 'text-base'}`}>
             {post.body.split('---')[0]?.substring(0, index === 0 ? 350 : 150).replace(/^#+\s/, '')}...
