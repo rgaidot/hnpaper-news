@@ -20,7 +20,7 @@ const { page } = Astro.props;
   <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
     {
       page.data.map((post) => (
-        <article class="bg-white rounded-none border border-stone-200 p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-300 flex flex-col">
+        <article class="bg-white rounded-xl border border-stone-200 p-6 shadow-lg hover:shadow-2xl hover:-translate-y-1 hover:border-blue-300 transition-all duration-300 flex flex-col">
           <div class="mb-2 text-xs font-bold tracking-wider text-stone-400 uppercase">
              {new Date(post.data.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
           </div>
