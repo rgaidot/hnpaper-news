@@ -21,44 +21,47 @@ const formattedDate = format(entry.data.date, 'EEEE d MMMM yyyy à HH:mm', { loc
 <Layout title={entry.data.title}>
   <article class="mx-auto max-w-3xl">
     <!-- Header de l'article -->
-    <header class="mb-10 text-center border-b border-stone-200 pb-8">
-      <h1 class="text-4xl sm:text-5xl font-black text-blue-600 leading-tight mb-6">
-        {formattedDate}
+    <header class="mb-10 text-center border-b-4 border-double border-stone-300 pb-8">
+      <h1 class="text-4xl sm:text-5xl font-black font-serif text-stone-900 leading-tight mb-4">
+        {entry.data.title}
       </h1>
-      <div class="flex justify-center items-center space-x-2 text-stone-500 text-sm italic">
-        <span>Par {entry.data.author}</span>
+      <div class="flex flex-col items-center space-y-2 text-stone-600 font-sans text-sm uppercase tracking-widest">
+        <span class="font-bold">{formattedDate}</span>
+        <span class="italic text-xs">Par {entry.data.author}</span>
       </div>
     </header>
 
     <!-- Contenu Markdown -->
-    <div class="prose prose-stone prose-lg max-w-none mx-auto
-      prose-headings:font-serif prose-headings:font-bold prose-headings:text-stone-800
-      prose-a:text-blue-700 prose-a:no-underline hover:prose-a:underline
-      prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-stone-50 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:italic
-      prose-img:rounded-md prose-img:shadow-md
+    <div class="prose prose-stone prose-lg max-w-none mx-auto text-justify
+      prose-headings:font-serif prose-headings:font-bold prose-headings:text-stone-900
+      prose-p:font-serif prose-p:text-stone-800
+      prose-a:text-stone-900 prose-a:underline prose-a:decoration-1 hover:prose-a:decoration-2
+      prose-blockquote:border-l-2 prose-blockquote:border-stone-900 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-stone-700
+      prose-img:border prose-img:border-stone-900 prose-img:p-1
     ">
       <Content />
     </div>
 
     <!-- Liens Discussion & Source -->
-    <div class="mt-12 pt-8 border-t border-stone-200 text-stone-600 space-y-2">
-      {entry.data.discussionUrl && (
-        <p>
-          <strong>Discussion HN :</strong> <a href={entry.data.discussionUrl} target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Participer à la discussion</a>
-        </p>
-      )}
-      {entry.data.sourceUrl && (
-        <p>
-          <strong>Article source :</strong> <a href={entry.data.sourceUrl} target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Lire l'article original</a>
-        </p>
-      )}
-    </div>
-
-    <!-- Navigation post-article -->
-    <div class="mt-8 pt-4 border-t border-stone-200 flex justify-between">
-      <a href="/" class="text-stone-500 hover:text-stone-900 font-medium transition-colors">
-        &larr; Retour à l'accueil
-      </a>
+    <div class="mt-12 pt-8 border-t border-stone-900 flex flex-col sm:flex-row justify-between text-sm font-sans">
+      <div class="space-y-1">
+        {entry.data.discussionUrl && (
+          <p>
+            <strong>Discussion HN :</strong> <a href={entry.data.discussionUrl} target="_blank" rel="noopener noreferrer" class="text-stone-900 hover:underline">Participer</a>
+          </p>
+        )}
+        {entry.data.sourceUrl && (
+          <p>
+            <strong>Source :</strong> <a href={entry.data.sourceUrl} target="_blank" rel="noopener noreferrer" class="text-stone-900 hover:underline">Lire l'original</a>
+          </p>
+        )}
+      </div>
+      
+      <div class="mt-4 sm:mt-0">
+        <a href="/" class="text-stone-900 font-bold uppercase tracking-widest hover:underline">
+          &larr; Retour à la Une
+        </a>
+      </div>
     </div>
   </article>
 </Layout>
