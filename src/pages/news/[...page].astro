@@ -25,9 +25,6 @@ const { page } = Astro.props;
              {new Date(post.data.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
           </div>
           
-          <h3 class="text-xl font-bold font-serif leading-tight mb-3 text-stone-900">
-             <a href={`/news/${post.slug}`} class="hover:underline">{post.data.title}</a>
-          </h3>
 
           <p class="text-stone-700 font-serif text-sm leading-relaxed mb-4 flex-grow line-clamp-4 text-justify">
             {post.body.split('---')[0]?.replace(/^#+\s/, '')}
@@ -35,7 +32,7 @@ const { page } = Astro.props;
 
           <div class="mt-auto">
              <a href={`/news/${post.slug}`} class="text-xs font-bold uppercase tracking-widest hover:underline text-stone-900">
-               Lire l'article &rarr;
+               Lire &rarr;
              </a>
           </div>
         </article>
