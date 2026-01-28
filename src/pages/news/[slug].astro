@@ -3,6 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import TTSPlayer from '../../components/TTSPlayer.astro';
 
 export async function getStaticPaths() {
   const newsEntries = await getCollection('news');
@@ -26,8 +27,9 @@ const formattedDate = format(entry.data.date, 'EEEE d MMMM yyyy à HH:mm', { loc
         <span class="font-bold">{formattedDate}</span>
         <span class="italic text-xs">Par {entry.data.author}</span>
       </div>
+      <TTSPlayer title={entry.data.title} />
     </header>
-
+    
     <!-- Contenu Markdown -->
     <div class="prose prose-stone prose-lg max-w-none mx-auto text-justify
       prose-headings:font-serif prose-headings:font-bold prose-headings:text-stone-900
