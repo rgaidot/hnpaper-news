@@ -16,7 +16,7 @@ const latestNews = sortedNews.slice(0, 10);
         <p class="font-serif text-lg md:text-xl text-stone-800 leading-relaxed text-justify first-letter:text-5xl first-letter:font-black first-letter:float-left first-letter:mr-3 first-letter:mt-[-6px]">
           {latestNews[0].body.split('---')[0]?.substring(0, 500).replace(/^#+\s/, '')}...
         </p>
-        <div class="mt-4 text-center">
+        <div class="mt-4">
           <a href={`/news/${latestNews[0].slug}`} class="text-sm font-bold uppercase tracking-widest hover:underline">Lire &rarr;</a>
         </div>
       </div>
@@ -24,7 +24,7 @@ const latestNews = sortedNews.slice(0, 10);
   )}
 
   <!-- Secondary Articles Grid -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-12 divide-y md:divide-y-0 divide-stone-300">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12 divide-y md:divide-y-0 divide-stone-300">
     {
       latestNews.slice(1).map((post) => (
         <article class="flex flex-col pt-8 md:pt-0">
@@ -34,7 +34,7 @@ const latestNews = sortedNews.slice(0, 10);
           </div>
           
           <p class="text-stone-700 font-serif text-sm leading-relaxed text-justify line-clamp-6 mb-4">
-            {post.body.split('---')[0]?.substring(0, 200).replace(/^#+\s/, '')}...
+            {post.body.split('---')[0]?.substring(0, 300).replace(/^#+\s/, '')}...
           </p>
 
           <div class="mt-auto">
