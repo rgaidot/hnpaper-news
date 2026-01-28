@@ -24,7 +24,7 @@ const formattedDate = format(entry.data.date, 'EEEE d MMMM yyyy à HH:mm', { loc
     <!-- Header de l'article -->
     <header class="mb-10 text-center border-b-4 border-double border-stone-300 pb-8">
       <div class="flex flex-col items-center space-y-2 text-stone-600 font-sans text-sm uppercase tracking-widest">
-        <span class="font-bold">{formattedDate}</span>
+        <span class="text-2xl font-bold">{formattedDate}</span>
         <span class="italic text-xs">Par {entry.data.author}</span>
       </div>
       <TTSPlayer title={entry.data.title} />
