@@ -33,12 +33,31 @@ const { title } = Astro.props;
     const prepareText = () => {
       if (!articleContent) return;
 
+      // Mark ignored content first
+      const ignorePatterns = [
+          /Discussion HN\s*:/i,
+          /Article source\s*:/i
+      ];
+      const candidates = articleContent.querySelectorAll('li, p');
+      candidates.forEach(el => {
+          if (ignorePatterns.some(p => p.test(el.textContent || ''))) {
+              el.classList.add('tts-ignore');
+          }
+      });
+
       if (articleContent.querySelector('.tts-word')) {
         rebuildMap();
         return;
       }
 
-      const walker = document.createTreeWalker(articleContent, NodeFilter.SHOW_TEXT);
+      const walker = document.createTreeWalker(articleContent, NodeFilter.SHOW_TEXT, {
+        acceptNode: (node) => {
+            if (node.parentElement && node.parentElement.closest('.tts-ignore')) {
+                return NodeFilter.FILTER_REJECT;
+            }
+            return NodeFilter.FILTER_ACCEPT;
+        }
+      });
       const nodesToReplace: Text[] = [];
       while(walker.nextNode()) {
         nodesToReplace.push(walker.currentNode as Text);
@@ -76,6 +95,9 @@ const { title } = Astro.props;
       
       const spans = articleContent.querySelectorAll('.tts-word');
       spans.forEach(span => {
+        // Double check if span is inside ignored element (in case it was added dynamically or missed)
+        if (span.closest('.tts-ignore')) return;
+
         const word = span.textContent || "";
         wordMap.push({
           start: contentText.length,
@@ -111,6 +133,8 @@ const { title } = Astro.props;
       let currentCharIndex = 0;
       let fullText = "";
       let isPausingManually = false;
+      let sentences: { text: string, start: number }[] = [];
+      let currentSentenceIndex = 0;
 
       const updateUI = (state: 'playing' | 'paused' | 'stopped' | 'error') => {
         currentState = state === 'error' ? 'stopped' : state;
@@ -157,7 +181,7 @@ const { title } = Astro.props;
          if (currentActive) currentActive.classList.remove('tts-active');
       };
 
-      const speak = (textToSpeak: string) => {
+      const speak = (textToSpeak: string, offset: number = 0) => {
         if (!window.speechSynthesis) {
           updateUI('error');
           return;
@@ -171,7 +195,7 @@ const { title } = Astro.props;
 
         utterance = new SpeechSynthesisUtterance(textToSpeak);
         utterance.lang = 'fr-FR';
-        utterance.rate = 1.5;
+        utterance.rate = 1;
         utterance.pitch = 1.0;
         utterance.volume = 1.0;
         
@@ -187,9 +211,15 @@ const { title } = Astro.props;
         
         utterance.onend = () => {
           if (!isPausingManually) {
-            clearHighlight();
-            currentCharIndex = 0;
-            updateUI('stopped');
+            currentSentenceIndex++;
+            if (currentSentenceIndex < sentences.length) {
+                const s = sentences[currentSentenceIndex];
+                speak(s.text, s.start);
+            } else {
+                clearHighlight();
+                currentCharIndex = 0;
+                updateUI('stopped');
+            }
           }
         };
         
@@ -214,8 +244,8 @@ const { title } = Astro.props;
 
         utterance.onboundary = (event) => {
             if (event.name === 'word') {
-                currentCharIndex = event.charIndex;
-                const charIndex = event.charIndex;
+                const charIndex = event.charIndex + offset;
+                currentCharIndex = charIndex;
                 
                 if (charIndex < titleText.length) {
                     clearHighlight();
@@ -228,6 +258,7 @@ const { title } = Astro.props;
                 if (match) {
                     clearHighlight();
                     match.element.classList.add('tts-active');
+                    match.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             }
         };
@@ -248,10 +279,17 @@ const { title } = Astro.props;
 
         // Si en pause, reprendre
         if (currentState === 'paused') {
-          const remainingText = fullText.substring(currentCharIndex);
+          let sIndex = sentences.findIndex(s => currentCharIndex >= s.start && currentCharIndex < s.start + s.text.length);
+          if (sIndex === -1) sIndex = 0;
+
+          currentSentenceIndex = sIndex;
+          const s = sentences[sIndex];
+          const localOffset = Math.max(0, currentCharIndex - s.start);
+          const remainingText = s.text.substring(localOffset);
+          
           if (remainingText) {
             isPausingManually = false;
-            speak(remainingText);
+            speak(remainingText, currentCharIndex);
           }
           return;
         }
@@ -283,21 +321,29 @@ const { title } = Astro.props;
           bodyText = contentText || (articleContent as HTMLElement).innerText;
         }
 
-        // Filter out "Discussion HN" and "Article source" links
-        // These patterns are expected to be at the end of a paragraph or list item in the text content
-        // The regex looks for "Discussion HN : " followed by any characters that are not a newline,
-        // or "Article source : " followed by any characters that are not a newline.
-        const filteredBodyText = bodyText.replace(/(Discussion HN : [^\n]*)|(Article source : [^\n]*)/gi, '');
-        
-        fullText = titleText + filteredBodyText;
+        // No need to filter bodyText anymore as ignored content is excluded from wordMap/contentText
+        fullText = titleText + bodyText;
         if (fullText.trim().length <= titleText.length) {
            console.warn("No text content found to speak.");
            return;
         }
         
+        // Split into sentences for better reliability
+        const rawSentences = fullText.match(/[^.!?]+[.!?]+(\s+|$)|[^.!?]+$/g) || [fullText];
+        let cursor = 0;
+        sentences = rawSentences.map(t => {
+            const entry = { text: t, start: cursor };
+            cursor += t.length;
+            return entry;
+        });
+
         currentCharIndex = 0;
+        currentSentenceIndex = 0;
         isPausingManually = false;
-        speak(fullText);
+        
+        if (sentences.length > 0) {
+            speak(sentences[0].text, sentences[0].start);
+        }
       });
 
       stopButton.addEventListener('click', () => {
