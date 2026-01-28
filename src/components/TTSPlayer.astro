@@ -132,7 +132,6 @@ const { title } = Astro.props;
       let currentState: 'stopped' | 'playing' | 'paused' = 'stopped';
       let currentCharIndex = 0;
       let fullText = "";
-      let isPausingManually = false;
       let sentences: { text: string, start: number }[] = [];
       let currentSentenceIndex = 0;
 
@@ -204,39 +203,38 @@ const { title } = Astro.props;
         if (frVoice) utterance.voice = frVoice;
 
         utterance.onstart = () => {
-          if (!isPausingManually) {
-            updateUI('playing');
+          if (currentState === 'playing') {
+             // Already playing
           }
         };
         
         utterance.onend = () => {
-          if (!isPausingManually) {
-            currentSentenceIndex++;
-            if (currentSentenceIndex < sentences.length) {
-                const s = sentences[currentSentenceIndex];
-                speak(s.text, s.start);
-            } else {
-                clearHighlight();
-                currentCharIndex = 0;
-                updateUI('stopped');
-            }
+          if (currentState === 'paused' || currentState === 'stopped') {
+            return;
+          }
+          currentSentenceIndex++;
+          if (currentSentenceIndex < sentences.length) {
+              const s = sentences[currentSentenceIndex];
+              speak(s.text, s.start);
+          } else {
+              clearHighlight();
+              currentCharIndex = 0;
+              updateUI('stopped');
           }
         };
         
         utterance.onerror = (event) => {
-          // Ignorer l'erreur "interrupted" qui vient de la pause manuelle
-          if (event.error === 'interrupted' && isPausingManually) {
+          if (currentState === 'paused' || currentState === 'stopped') {
             return;
           }
           
           console.error('Speech error:', event.error);
           
-          if (!isPausingManually) {
+          if (event.error !== 'interrupted') {
             clearHighlight();
-            
             if (event.error === 'not-allowed' || event.error === 'synthesis-unavailable') {
               updateUI('error');
-            } else if (event.error !== 'interrupted') {
+            } else {
               updateUI('stopped');
             }
           }
@@ -279,34 +277,50 @@ const { title } = Astro.props;
 
         // Si en pause, reprendre
         if (currentState === 'paused') {
-          let sIndex = sentences.findIndex(s => currentCharIndex >= s.start && currentCharIndex < s.start + s.text.length);
-          if (sIndex === -1) sIndex = 0;
+          updateUI('playing');
 
-          currentSentenceIndex = sIndex;
-          const s = sentences[sIndex];
+          // Validate currentSentenceIndex
+          if (currentSentenceIndex < 0 || currentSentenceIndex >= sentences.length) {
+             currentSentenceIndex = 0;
+          }
+
+          let s = sentences[currentSentenceIndex];
+          
+          // Fallback: if currentCharIndex seems wildly off (e.g. 0), snap to current sentence start
+          // This handles cases where onboundary doesn't fire reliably
+          if (currentCharIndex < s.start || currentCharIndex >= s.start + s.text.length) {
+             currentCharIndex = s.start;
+          }
+
           const localOffset = Math.max(0, currentCharIndex - s.start);
           const remainingText = s.text.substring(localOffset);
           
-          if (remainingText) {
-            isPausingManually = false;
+          if (remainingText.trim()) {
             speak(remainingText, currentCharIndex);
+          } else {
+            // Move to next sentence if current is done/empty
+            currentSentenceIndex++;
+            if (currentSentenceIndex < sentences.length) {
+                s = sentences[currentSentenceIndex];
+                currentCharIndex = s.start;
+                speak(s.text, s.start);
+            } else {
+                clearHighlight();
+                currentCharIndex = 0;
+                currentSentenceIndex = 0;
+                updateUI('stopped');
+            }
           }
           return;
         }
 
         // Si en lecture, mettre en pause
         if (currentState === 'playing') {
-          isPausingManually = true;
+          updateUI('paused');
           try {
             window.speechSynthesis.cancel();
-            // Attendre un peu avant de mettre à jour l'UI
-            setTimeout(() => {
-              updateUI('paused');
-              isPausingManually = false;
-            }, 100);
           } catch (e) {
             console.error('Error pausing speech:', e);
-            isPausingManually = false;
           }
           return;
         }
@@ -339,20 +353,20 @@ const { title } = Astro.props;
 
         currentCharIndex = 0;
         currentSentenceIndex = 0;
-        isPausingManually = false;
         
         if (sentences.length > 0) {
+            updateUI('playing');
             speak(sentences[0].text, sentences[0].start);
         }
       });
 
       stopButton.addEventListener('click', () => {
         try {
-          isPausingManually = false;
+          updateUI('stopped');
           window.speechSynthesis.cancel();
           clearHighlight();
           currentCharIndex = 0;
-          updateUI('stopped');
+          currentSentenceIndex = 0;
         } catch (e) {
           console.error('Error stopping speech:', e);
         }
@@ -373,4 +387,15 @@ const { title } = Astro.props;
   }
   
   document.addEventListener('astro:page-load', initTTS);
+
+  // Global keyboard shortcut for play/pause
+  document.addEventListener('keydown', (event) => {
+    if (event.code === 'Space' && !event.repeat) {
+      const firstPlayPauseButton = document.querySelector('.play-pause-tts') as HTMLButtonElement;
+      if (firstPlayPauseButton) {
+        event.preventDefault();
+        firstPlayPauseButton.click();
+      }
+    }
+  });
 </script>
