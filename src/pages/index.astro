@@ -12,12 +12,6 @@ const latestNews = sortedNews.slice(0, 10);
   <!-- Headline Article -->
   {latestNews.length > 0 && (
     <article class="mb-12 pb-12 border-b-2 border-stone-900">
-      <div class="text-center mb-6">
-        <span class="inline-block border-b border-stone-900 pb-1 mb-2 text-xs font-sans font-bold uppercase tracking-widest text-stone-500">
-           {new Date(latestNews[0].data.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
-        </span>
-      </div>
-      
       <div class="max-w-3xl mx-auto">
         <p class="font-serif text-lg md:text-xl text-stone-800 leading-relaxed text-justify first-letter:text-5xl first-letter:font-black first-letter:float-left first-letter:mr-3 first-letter:mt-[-6px]">
           {latestNews[0].body.split('---')[0]?.substring(0, 500).replace(/^#+\s/, '')}...
