@@ -171,7 +171,7 @@ const { title } = Astro.props;
 
         utterance = new SpeechSynthesisUtterance(textToSpeak);
         utterance.lang = 'fr-FR';
-        utterance.rate = 2;
+        utterance.rate = 1.5;
         utterance.pitch = 1.0;
         utterance.volume = 1.0;
         
@@ -282,8 +282,14 @@ const { title } = Astro.props;
         if (articleContent) {
           bodyText = contentText || (articleContent as HTMLElement).innerText;
         }
+
+        // Filter out "Discussion HN" and "Article source" links
+        // These patterns are expected to be at the end of a paragraph or list item in the text content
+        // The regex looks for "Discussion HN : " followed by any characters that are not a newline,
+        // or "Article source : " followed by any characters that are not a newline.
+        const filteredBodyText = bodyText.replace(/(Discussion HN : [^\n]*)|(Article source : [^\n]*)/gi, '');
         
-        fullText = titleText + bodyText;
+        fullText = titleText + filteredBodyText;
         if (fullText.trim().length <= titleText.length) {
            console.warn("No text content found to speak.");
            return;

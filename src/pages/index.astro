@@ -23,7 +23,7 @@ const latestNews = sortedNews.slice(0, 10);
           {latestNews[0].body.split('---')[0]?.substring(0, 500).replace(/^#+\s/, '')}...
         </p>
         <div class="mt-4 text-center">
-          <a href={`/news/${latestNews[0].slug}`} class="text-sm font-bold uppercase tracking-widest hover:underline">Continuer la lecture &rarr;</a>
+          <a href={`/news/${latestNews[0].slug}`} class="text-sm font-bold uppercase tracking-widest hover:underline">Lire &rarr;</a>
         </div>
       </div>
     </article>
