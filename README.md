@@ -4,6 +4,17 @@ Welcome to the **HNPaper News** repository, an automated news archive from [HNPa
 
 This project is version v2, rebuilt with **Astro** to replace the old Jekyll version. It generates a fast and lightweight static site hosted on GitHub Pages.
 
+## ✨ Features
+
+-   **Daily Summaries**: Automated archives of HNPaper news.
+-   **Audio Player (TTS)**: Integrated text-to-speech functionality to listen to articles.
+    -   Adjustable playback speed (0.75x to 7x).
+    -   Interactive highlighting (karaoke style).
+    -   Click on any word to start reading from there.
+    -   **Shortcut**: Press `Space` to Play/Pause.
+-   **Share Section**: Click on the link icon next to any paragraph to copy a direct link to that specific section.
+-   **Newspaper Design**: A clean, serif-focused aesthetic inspired by classic print media.
+
 ## 🚀 Technologies
 
 -   **Framework**: [Astro](https://astro.build) v5
