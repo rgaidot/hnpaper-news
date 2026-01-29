@@ -1,9 +1,10 @@
 ---
 interface Props {
   title: string;
+  readingTime?: number;
 }
 
-const { title } = Astro.props;
+const { title, readingTime } = Astro.props;
 ---
 
 <div class="tts-player-container flex items-center justify-center space-x-2 mt-4" data-title={title}>
@@ -28,7 +29,11 @@ const { title } = Astro.props;
     <option value="3">3x</option>
     <option value="3.5">3.5x</option>
     <option value="4">4x</option>
+    <option value="4.5">4.5x</option>
   </select>
+  {readingTime && (
+    <span class="tts-reading-time text-xs font-sans font-bold uppercase tracking-widest text-stone-500" data-base-time={readingTime}>{readingTime} min</span>
+  )}
   <span class="tts-status text-sm text-stone-600 italic">Prêt à lire</span>
 </div>
 
@@ -37,6 +42,7 @@ const { title } = Astro.props;
     const containers = document.querySelectorAll('.tts-player-container');
     if (containers.length === 0) return;
     
+    // ... existing content prep logic ...
     const articleContent = document.querySelector('.prose');
     let contentText = "";
     let wordMap: { start: number, end: number, element: HTMLElement }[] = [];
@@ -129,6 +135,7 @@ const { title } = Astro.props;
       const stopButton = container.querySelector('.stop-tts') as HTMLButtonElement;
       const ttsStatus = container.querySelector('.tts-status') as HTMLElement;
       const speedSelect = container.querySelector('.tts-speed') as HTMLSelectElement;
+      const readingTimeSpan = container.querySelector('.tts-reading-time') as HTMLElement;
       
       if (!playPauseButton || !stopButton || !ttsStatus || !speedSelect) return;
 
@@ -351,6 +358,15 @@ const { title } = Astro.props;
       }
 
       speedSelect.addEventListener('change', () => {
+        const newRate = parseFloat(speedSelect.value) || 1;
+        
+        // Update reading time display
+        if (readingTimeSpan && readingTimeSpan.dataset.baseTime) {
+          const baseTime = parseFloat(readingTimeSpan.dataset.baseTime);
+          const newTime = Math.ceil(baseTime / newRate);
+          readingTimeSpan.textContent = `${newTime} min`;
+        }
+
         if (currentState === 'playing') {
           window.speechSynthesis.cancel();
           
