@@ -37,37 +37,31 @@ async function migrateUrls() {
       let newBody = body;
       let modified = false;
 
-      // Extract Discussion HN URL
-      const discussionRegex = /- \*\*Discussion HN\*\* : \[(.*?)\]\((https?:\/\/[^\s\)]*?)\)/; // Updated regex to be less greedy
+      const discussionRegex = /- \*\*Discussion HN\*\* : \[(.*?)\]\((https?:\/\/[^\s\)]*?)\)/; 
       let discussionMatch = newBody.match(discussionRegex);
       if (discussionMatch && discussionMatch[2] && discussionMatch[2] !== '' && !data.discussionUrl) {
         data.discussionUrl = discussionMatch[2];
         newBody = newBody.replace(discussionMatch[0], '').trim();
         modified = true;
       } else if (newBody.includes('- **Discussion HN** : [Lire la discussion]()') && !data.discussionUrl) {
-        // Case where the URL is empty but the line exists
         newBody = newBody.replace('- **Discussion HN** : [Lire la discussion]()', '').trim();
         modified = true;
       }
 
-      // Extract Article source URL
-      const sourceRegex = /- \*\*Article source\*\* : \[(.*?)\]\((https?:\/\/[^\s\)]*?)\)/; // Updated regex to be less greedy
+      const sourceRegex = /- \*\*Article source\*\* : \[(.*?)\]\((https?:\/\/[^\s\)]*?)\)/; 
       let sourceMatch = newBody.match(sourceRegex);
       if (sourceMatch && sourceMatch[2] && sourceMatch[2] !== '' && !data.sourceUrl) {
         data.sourceUrl = sourceMatch[2];
         newBody = newBody.replace(sourceMatch[0], '').trim();
         modified = true;
       } else if (newBody.includes('- **Article source** : []()') && !data.sourceUrl) {
-           // Case where the URL is empty but the line exists
           newBody = newBody.replace('- **Article source** : []()', '').trim();
           modified = true;
       } else if (newBody.includes('L\'article source n\'a pas pu être chargé.') && !data.sourceUrl) {
-        // Specific text for unavailable source, remove it
         newBody = newBody.replace('L\'article source n\'a pas pu être chargé.', '').trim();
         modified = true;
       }
       
-      // Clean up multiple hyphens that might appear after removing lines
       newBody = newBody.replace(/\n-{3,}\n/g, '\n').trim();
 
       if (modified) {

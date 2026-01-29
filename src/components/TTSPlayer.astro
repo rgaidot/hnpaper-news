@@ -42,7 +42,6 @@ const { title, readingTime } = Astro.props;
     const containers = document.querySelectorAll('.tts-player-container');
     if (containers.length === 0) return;
     
-    // ... existing content prep logic ...
     const articleContent = document.querySelector('.prose');
     let contentText = "";
     let wordMap: { start: number, end: number, element: HTMLElement }[] = [];
@@ -50,7 +49,6 @@ const { title, readingTime } = Astro.props;
     const prepareText = () => {
       if (!articleContent) return;
 
-      // Mark ignored content first
       const ignorePatterns = [
           /^\s*Discussion HN\s*:/i,
           /^\s*Article source\s*:/i
@@ -112,7 +110,6 @@ const { title, readingTime } = Astro.props;
       
       const spans = articleContent.querySelectorAll('.tts-word');
       spans.forEach(span => {
-        // Double check if span is inside ignored element (in case it was added dynamically or missed)
         if (span.closest('.tts-ignore')) return;
 
         const word = span.textContent || "";
@@ -142,7 +139,6 @@ const { title, readingTime } = Astro.props;
       const articleTitle = container.getAttribute('data-title') || '';
       const titleText = articleTitle + ". ";
       
-      // Attempt to restore playAt from previous initialization
       if (container.hasAttribute('data-tts-initialized')) {
           const storedPlayAt = (container as any)._playAt;
           if (storedPlayAt && !playAtGlobal) {
@@ -163,7 +159,6 @@ const { title, readingTime } = Astro.props;
       const updateUI = (state: 'playing' | 'paused' | 'stopped' | 'error') => {
         currentState = state === 'error' ? 'stopped' : state;
         
-        // Dispatch event for other components (like floating nav)
         window.dispatchEvent(new CustomEvent('tts-state-change', { 
             detail: { state: currentState } 
         }));
@@ -219,7 +214,6 @@ const { title, readingTime } = Astro.props;
         try {
           window.speechSynthesis.cancel();
         } catch (e) {
-          // Ignore
         }
 
         utterance = new SpeechSynthesisUtterance(textToSpeak);
@@ -234,7 +228,6 @@ const { title, readingTime } = Astro.props;
 
         utterance.onstart = () => {
           if (currentState === 'playing') {
-             // Already playing
           }
         };
         
@@ -321,8 +314,6 @@ const { title, readingTime } = Astro.props;
             const segmenter = new Intl.Segmenter('fr', { granularity: 'sentence' });
             segments = Array.from(segmenter.segment(fullText)).map(s => s.segment);
         } else {
-            // Fallback regex that is more robust than splitting on just .!?
-            // Matches any characters until a sentence ending punctuation followed by space or end of string
             segments = fullText.match(/[\s\S]*?[.!?]+(?:\s+|$)|[\s\S]+$/g) || [fullText];
         }
         
@@ -358,12 +349,10 @@ const { title, readingTime } = Astro.props;
 
       const playFromElement = (targetEl: HTMLElement) => {
           if (!targetEl) return;
-          // Find the first word that is inside or constitutes the target element
           const match = wordMap.find(w => targetEl.contains(w.element) || w.element === targetEl);
           if (match) {
               playAt(titleTextLen + match.start);
           } else {
-              // Try next sibling if empty? or just ignore
           }
       };
 
@@ -383,7 +372,6 @@ const { title, readingTime } = Astro.props;
       speedSelect.addEventListener('change', () => {
         const newRate = parseFloat(speedSelect.value) || 1;
         
-        // Update reading time display
         if (readingTimeSpan && readingTimeSpan.dataset.baseTime) {
           const baseTime = parseFloat(readingTimeSpan.dataset.baseTime);
           const newTime = Math.ceil(baseTime / newRate);
@@ -430,7 +418,6 @@ const { title, readingTime } = Astro.props;
           return;
         }
 
-        // Si en pause, reprendre
         if (currentState === 'paused') {
           updateUI('playing');
 
@@ -465,7 +452,6 @@ const { title, readingTime } = Astro.props;
           return;
         }
 
-        // Si en lecture, mettre en pause
         if (currentState === 'playing') {
           updateUI('paused');
           try {
@@ -476,7 +462,6 @@ const { title, readingTime } = Astro.props;
           return;
         }
 
-        // Sinon démarrer du début
         prepareSentences();
         
         currentCharIndex = 0;
@@ -536,7 +521,6 @@ const { title, readingTime } = Astro.props;
   
   document.addEventListener('astro:page-load', initTTS);
 
-  // Global keyboard shortcut for play/pause
   document.addEventListener('keydown', (event) => {
     if (event.code === 'Space' && !event.repeat) {
       const firstPlayPauseButton = document.querySelector('.play-pause-tts') as HTMLButtonElement;
