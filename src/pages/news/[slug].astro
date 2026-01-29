@@ -98,6 +98,10 @@ const readingTime = Math.ceil(words / wordsPerMinute);
         <div id="section-indicator" class="text-white text-xs font-bold text-center font-sans min-w-[3rem]">
         <span id="current-section">1</span> / <span id="total-sections">1</span>
         </div>
+
+        <button id="floating-speed-btn" class="text-white text-xs font-bold hover:text-stone-300 transition-colors px-2 border-l border-r border-stone-700 min-w-[3.5ch] text-center font-sans" aria-label="Vitesse de lecture" title="Changer la vitesse">
+            1x
+        </button>
         
         <button id="play-section-btn" class="p-2 text-white hover:bg-stone-700 rounded-full transition-all cursor-pointer" aria-label="Lire cette section">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="play-icon">
@@ -130,6 +134,7 @@ const readingTime = Math.ceil(words / wordsPerMinute);
       const totalSpan = document.getElementById('total-sections');
       const playIcon = document.getElementById('play-icon');
       const pauseIcon = document.getElementById('pause-icon');
+      const speedBtn = document.getElementById('floating-speed-btn');
 
       if (!navContainer || !prevBtn || !nextBtn || !playBtn || !currentSpan || !totalSpan) return;
 
@@ -312,6 +317,42 @@ const readingTime = Math.ceil(words / wordsPerMinute);
               }
           }
       });
+
+      if (speedBtn) {
+        const ttsSpeedSelect = document.querySelector('.tts-speed') as HTMLSelectElement;
+        
+        const updateSpeedBtn = () => {
+            if (ttsSpeedSelect) {
+                const val = ttsSpeedSelect.value.replace('x', ''); 
+                speedBtn.textContent = val + 'x';
+            }
+        };
+
+        updateSpeedBtn();
+
+        if (ttsSpeedSelect) {
+            ttsSpeedSelect.addEventListener('change', updateSpeedBtn);
+        }
+
+        speedBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!ttsSpeedSelect) return;
+            
+            const currentSpeed = parseFloat(ttsSpeedSelect.value);
+            const options = Array.from(ttsSpeedSelect.options).map(o => parseFloat(o.value));
+            
+            let nextIdx = options.findIndex(s => s > currentSpeed);
+            if (nextIdx === -1) {
+                nextIdx = 0;
+            }
+            
+            const nextSpeed = options[nextIdx];
+            ttsSpeedSelect.value = nextSpeed.toString();
+            
+            ttsSpeedSelect.dispatchEvent(new Event('change'));
+            updateSpeedBtn();
+        });
+      }
     }
 
     document.addEventListener('astro:page-load', initArticleNav);
