@@ -18,6 +18,17 @@ const { title } = Astro.props;
       <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
     </svg>
   </button>
+  <select class="tts-speed p-2 rounded bg-stone-200 hover:bg-stone-300 text-stone-800 transition-colors duration-200 border-none text-sm cursor-pointer outline-none font-medium" aria-label="Vitesse de lecture">
+    <option value="0.75">0.75x</option>
+    <option value="1" selected>1x</option>
+    <option value="1.25">1.25x</option>
+    <option value="1.5">1.5x</option>
+    <option value="2">2x</option>
+    <option value="2.5">2.5x</option>
+    <option value="3">3x</option>
+    <option value="3.5">3.5x</option>
+    <option value="4">4x</option>
+  </select>
   <span class="tts-status text-sm text-stone-600 italic">Prêt à lire</span>
 </div>
 
@@ -117,8 +128,9 @@ const { title } = Astro.props;
       const playPauseButton = container.querySelector('.play-pause-tts') as HTMLButtonElement;
       const stopButton = container.querySelector('.stop-tts') as HTMLButtonElement;
       const ttsStatus = container.querySelector('.tts-status') as HTMLElement;
+      const speedSelect = container.querySelector('.tts-speed') as HTMLSelectElement;
       
-      if (!playPauseButton || !stopButton || !ttsStatus) return;
+      if (!playPauseButton || !stopButton || !ttsStatus || !speedSelect) return;
 
       const articleTitle = container.getAttribute('data-title') || '';
       const titleText = articleTitle + ". ";
@@ -200,7 +212,7 @@ const { title } = Astro.props;
 
         utterance = new SpeechSynthesisUtterance(textToSpeak);
         utterance.lang = 'fr-FR';
-        utterance.rate = 1;
+        utterance.rate = parseFloat(speedSelect.value) || 1;
         utterance.pitch = 1.0;
         utterance.volume = 1.0;
         
@@ -328,6 +340,41 @@ const { title } = Astro.props;
           playAtGlobal = playAt;
           titleTextLen = titleText.length;
       }
+
+      speedSelect.addEventListener('change', () => {
+        if (currentState === 'playing') {
+          window.speechSynthesis.cancel();
+          
+          if (currentSentenceIndex < 0 || currentSentenceIndex >= sentences.length) {
+             currentSentenceIndex = 0;
+          }
+
+          let s = sentences[currentSentenceIndex];
+          
+          if (currentCharIndex < s.start || currentCharIndex >= s.start + s.text.length) {
+             currentCharIndex = s.start;
+          }
+
+          const localOffset = Math.max(0, currentCharIndex - s.start);
+          const remainingText = s.text.substring(localOffset);
+          
+          if (remainingText.trim()) {
+            speak(remainingText, currentCharIndex);
+          } else {
+            currentSentenceIndex++;
+            if (currentSentenceIndex < sentences.length) {
+                s = sentences[currentSentenceIndex];
+                currentCharIndex = s.start;
+                speak(s.text, s.start);
+            } else {
+                clearHighlight();
+                currentCharIndex = 0;
+                currentSentenceIndex = 0;
+                updateUI('stopped');
+            }
+          }
+        }
+      });
 
       playPauseButton.addEventListener('click', () => {
         if (!window.speechSynthesis) {
