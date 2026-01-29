@@ -46,8 +46,8 @@ const { title } = Astro.props;
 
       // Mark ignored content first
       const ignorePatterns = [
-          /Discussion HN\s*:/i,
-          /Article source\s*:/i
+          /^\s*Discussion HN\s*:/i,
+          /^\s*Article source\s*:/i
       ];
       const candidates = articleContent.querySelectorAll('li, p');
       candidates.forEach(el => {
@@ -269,7 +269,7 @@ const { title } = Astro.props;
                 }
                 
                 const relativeIndex = charIndex - titleText.length;
-                const match = wordMap.find(w => Math.abs(w.start - relativeIndex) <= 1);
+                const match = wordMap.find(w => relativeIndex >= w.start - 1 && relativeIndex < w.end);
                 
                 if (match) {
                     clearHighlight();
@@ -304,9 +304,18 @@ const { title } = Astro.props;
            return;
         }
         
-        const rawSentences = fullText.match(/[^.!?]+[.!?]+(\s+|$)|[^.!?]+$/g) || [fullText];
+        let segments: string[] = [];
+        if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
+            const segmenter = new Intl.Segmenter('fr', { granularity: 'sentence' });
+            segments = Array.from(segmenter.segment(fullText)).map(s => s.segment);
+        } else {
+            // Fallback regex that is more robust than splitting on just .!?
+            // Matches any characters until a sentence ending punctuation followed by space or end of string
+            segments = fullText.match(/[\s\S]*?[.!?]+(?:\s+|$)|[\s\S]+$/g) || [fullText];
+        }
+        
         let cursor = 0;
-        sentences = rawSentences.map(t => {
+        sentences = segments.map(t => {
             const entry = { text: t, start: cursor };
             cursor += t.length;
             return entry;
