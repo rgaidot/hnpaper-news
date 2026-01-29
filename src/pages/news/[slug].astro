@@ -17,6 +17,10 @@ const { entry } = Astro.props;
 const { Content } = await entry.render();
 
 const formattedDate = format(entry.data.date, 'EEEE d MMMM yyyy à HH:mm', { locale: fr });
+
+const wordsPerMinute = 200;
+const words = entry.body.trim().split(/\s+/).length;
+const readingTime = Math.ceil(words / wordsPerMinute);
 ---
 
 <Layout title={entry.data.title}>
@@ -27,7 +31,7 @@ const formattedDate = format(entry.data.date, 'EEEE d MMMM yyyy à HH:mm', { loc
         <span class="text-2xl font-bold">{formattedDate}</span>
         <span class="italic text-xs">Par {entry.data.author}</span>
       </div>
-      <TTSPlayer title={entry.data.title} />
+      <TTSPlayer title={entry.data.title} readingTime={readingTime} />
     </header>
     
     <!-- Contenu Markdown -->

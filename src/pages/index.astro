@@ -5,6 +5,11 @@ import { getCollection } from 'astro:content';
 const allNews = await getCollection('news');
 const sortedNews = allNews.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
 const latestNews = sortedNews.slice(0, 10);
+
+const getReadingTime = (body: string) => {
+  const words = body.trim().split(/\s+/).length;
+  return Math.ceil(words / 200);
+};
 ---
 
 <Layout title="The HNPaper Daily">
@@ -13,6 +18,11 @@ const latestNews = sortedNews.slice(0, 10);
   {latestNews.length > 0 && (
     <article class="mb-12 pb-12 border-b-2 border-stone-900">
       <div class="max-w-3xl mx-auto">
+        <div class="mb-4 flex items-center space-x-2 text-xs font-sans font-bold uppercase tracking-widest text-stone-500">
+           <span>{new Date(latestNews[0].data.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+           <span>&bull;</span>
+           <span>{getReadingTime(latestNews[0].body)} min de lecture</span>
+        </div>
         <p class="font-serif text-lg md:text-xl text-stone-800 leading-relaxed text-justify first-letter:text-5xl first-letter:font-black first-letter:float-left first-letter:mr-3 first-letter:mt-[-6px]">
           {latestNews[0].body.split('---')[0]?.substring(0, 500).replace(/^#+\s/, '')}...
         </p>
@@ -28,9 +38,13 @@ const latestNews = sortedNews.slice(0, 10);
     {
       latestNews.slice(1).map((post) => (
         <article class="flex flex-col pt-8 md:pt-0">
-          <div class="mb-2 text-xs font-sans font-bold uppercase text-stone-500 flex justify-between border-b border-stone-300 pb-1">
-            <span>{new Date(post.data.date).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })}</span>
-            <span>{new Date(post.data.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+          <div class="mb-2 text-xs font-sans font-bold uppercase text-stone-500 flex justify-between items-center border-b border-stone-300 pb-1">
+            <div class="flex space-x-2">
+              <span>{new Date(post.data.date).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })}</span>
+              <span>&bull;</span>
+              <span>{new Date(post.data.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+            <span>{getReadingTime(post.body)} min</span>
           </div>
           
           <p class="text-stone-700 font-serif text-sm leading-relaxed text-justify line-clamp-6 mb-4">
