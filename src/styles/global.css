@@ -25,6 +25,11 @@ h6 {
 .tts-word {
   border-radius: 2px;
   transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.tts-word:hover {
+  background-color: #fef3c7; /* stone-100 */
 }
 
 .tts-active {
