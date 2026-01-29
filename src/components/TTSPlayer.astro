@@ -110,24 +110,30 @@ const { title } = Astro.props;
 
     prepareText();
 
-    containers.forEach(container => {
-      if (container.hasAttribute('data-tts-initialized')) return;
-      container.setAttribute('data-tts-initialized', 'true');
+    let playAtGlobal: ((index: number) => void) | null = null;
+    let titleTextLen = 0;
 
+    containers.forEach(container => {
       const playPauseButton = container.querySelector('.play-pause-tts') as HTMLButtonElement;
       const stopButton = container.querySelector('.stop-tts') as HTMLButtonElement;
       const ttsStatus = container.querySelector('.tts-status') as HTMLElement;
       
       if (!playPauseButton || !stopButton || !ttsStatus) return;
 
-      if (!window.speechSynthesis) {
-        container.style.display = 'none';
-        return;
-      }
-
       const articleTitle = container.getAttribute('data-title') || '';
       const titleText = articleTitle + ". ";
       
+      // Attempt to restore playAt from previous initialization
+      if (container.hasAttribute('data-tts-initialized')) {
+          const storedPlayAt = (container as any)._playAt;
+          if (storedPlayAt && !playAtGlobal) {
+              playAtGlobal = storedPlayAt;
+              titleTextLen = titleText.length;
+          }
+          return;
+      }
+      container.setAttribute('data-tts-initialized', 'true');
+
       let utterance: SpeechSynthesisUtterance | null = null;
       let currentState: 'stopped' | 'playing' | 'paused' = 'stopped';
       let currentCharIndex = 0;
@@ -269,6 +275,60 @@ const { title } = Astro.props;
         }
       };
 
+      const prepareSentences = () => {
+        if (!contentText) {
+          prepareText();
+        }
+        
+        let bodyText = "";
+        if (articleContent) {
+          bodyText = contentText || (articleContent as HTMLElement).innerText;
+        }
+
+        fullText = titleText + bodyText;
+        if (fullText.trim().length <= titleText.length) {
+           console.warn("No text content found to speak.");
+           sentences = [];
+           return;
+        }
+        
+        const rawSentences = fullText.match(/[^.!?]+[.!?]+(\s+|$)|[^.!?]+$/g) || [fullText];
+        let cursor = 0;
+        sentences = rawSentences.map(t => {
+            const entry = { text: t, start: cursor };
+            cursor += t.length;
+            return entry;
+        });
+      };
+
+      const playAt = (index: number) => {
+         if (!window.speechSynthesis) return;
+         
+         if (sentences.length === 0) {
+             prepareSentences();
+         }
+         
+         const sIdx = sentences.findIndex(s => index >= s.start && index < s.start + s.text.length);
+         if (sIdx === -1) return;
+         
+         currentSentenceIndex = sIdx;
+         currentCharIndex = index;
+         
+         updateUI('playing');
+         
+         const s = sentences[currentSentenceIndex];
+         const localOffset = Math.max(0, currentCharIndex - s.start);
+         const remainingText = s.text.substring(localOffset);
+         
+         speak(remainingText, currentCharIndex);
+      };
+
+      (container as any)._playAt = playAt;
+      if (!playAtGlobal) {
+          playAtGlobal = playAt;
+          titleTextLen = titleText.length;
+      }
+
       playPauseButton.addEventListener('click', () => {
         if (!window.speechSynthesis) {
           updateUI('error');
@@ -279,15 +339,12 @@ const { title } = Astro.props;
         if (currentState === 'paused') {
           updateUI('playing');
 
-          // Validate currentSentenceIndex
           if (currentSentenceIndex < 0 || currentSentenceIndex >= sentences.length) {
              currentSentenceIndex = 0;
           }
 
           let s = sentences[currentSentenceIndex];
           
-          // Fallback: if currentCharIndex seems wildly off (e.g. 0), snap to current sentence start
-          // This handles cases where onboundary doesn't fire reliably
           if (currentCharIndex < s.start || currentCharIndex >= s.start + s.text.length) {
              currentCharIndex = s.start;
           }
@@ -298,7 +355,6 @@ const { title } = Astro.props;
           if (remainingText.trim()) {
             speak(remainingText, currentCharIndex);
           } else {
-            // Move to next sentence if current is done/empty
             currentSentenceIndex++;
             if (currentSentenceIndex < sentences.length) {
                 s = sentences[currentSentenceIndex];
@@ -326,31 +382,8 @@ const { title } = Astro.props;
         }
 
         // Sinon démarrer du début
-        if (!contentText) {
-          prepareText();
-        }
+        prepareSentences();
         
-        let bodyText = "";
-        if (articleContent) {
-          bodyText = contentText || (articleContent as HTMLElement).innerText;
-        }
-
-        // No need to filter bodyText anymore as ignored content is excluded from wordMap/contentText
-        fullText = titleText + bodyText;
-        if (fullText.trim().length <= titleText.length) {
-           console.warn("No text content found to speak.");
-           return;
-        }
-        
-        // Split into sentences for better reliability
-        const rawSentences = fullText.match(/[^.!?]+[.!?]+(\s+|$)|[^.!?]+$/g) || [fullText];
-        let cursor = 0;
-        sentences = rawSentences.map(t => {
-            const entry = { text: t, start: cursor };
-            cursor += t.length;
-            return entry;
-        });
-
         currentCharIndex = 0;
         currentSentenceIndex = 0;
         
@@ -377,6 +410,26 @@ const { title } = Astro.props;
         window.speechSynthesis.onvoiceschanged = () => {
           window.speechSynthesis.getVoices();
         };
+    }
+
+    if (articleContent) {
+        const existingHandler = (articleContent as any)._ttsClickHandler;
+        if (existingHandler) {
+            articleContent.removeEventListener('click', existingHandler);
+        }
+        
+        const clickHandler = (e: Event) => {
+            const target = e.target as HTMLElement;
+            if (!target.classList.contains('tts-word')) return;
+            
+            const entry = wordMap.find(w => w.element === target);
+            if (entry && playAtGlobal) {
+                playAtGlobal(titleTextLen + entry.start);
+            }
+        };
+        
+        articleContent.addEventListener('click', clickHandler);
+        (articleContent as any)._ttsClickHandler = clickHandler;
     }
   }
 
