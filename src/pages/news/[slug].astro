@@ -7,13 +7,19 @@ import TTSPlayer from '../../components/TTSPlayer.astro';
 
 export async function getStaticPaths() {
   const newsEntries = await getCollection('news');
-  return newsEntries.map((entry) => ({
+  const sortedNews = newsEntries.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
+  return sortedNews.map((entry, index) => ({
     params: { slug: entry.slug },
-    props: { entry },
+    props: { 
+      entry,
+      nextPost: index - 1 >= 0 ? sortedNews[index - 1] : null,
+      prevPost: index + 1 < sortedNews.length ? sortedNews[index + 1] : null,
+    },
   }));
 }
 
-const { entry } = Astro.props;
+const { entry, nextPost, prevPost } = Astro.props;
 const { Content } = await entry.render();
 
 const formattedDate = format(entry.data.date, 'EEEE d MMMM yyyy à HH:mm', { locale: fr });
@@ -45,8 +51,8 @@ const readingTime = Math.ceil(words / wordsPerMinute);
       <Content />
     </div>
 
-    <!-- Liens Discussion & Source -->
-    <div class="mt-12 pt-8 border-t border-stone-900 flex flex-col sm:flex-row justify-between text-sm font-sans">
+    <!-- Liens Discussion & Source & Navigation -->
+    <div class="mt-12 pt-8 border-t border-stone-900 flex flex-col gap-8 text-sm font-sans">
       <div class="space-y-1">
         {entry.data.discussionUrl && (
           <p>
@@ -60,11 +66,211 @@ const readingTime = Math.ceil(words / wordsPerMinute);
         )}
       </div>
       
-      <div class="mt-4 sm:mt-0">
-        <a href="/" class="text-stone-900 font-bold uppercase tracking-widest hover:underline">
-          &larr; Retour à la Une
+      <nav class="flex flex-col sm:flex-row justify-between items-center gap-4 text-stone-900 font-bold uppercase tracking-widest">
+        {prevPost ? (
+          <a href={`/news/${prevPost.slug}`} class="hover:underline text-center sm:text-left">
+            &larr; Précédent
+          </a>
+        ) : (
+          <span class="w-20"></span>
+        )}
+
+        <a href="/" class="hover:underline text-center">
+          Retour à la Une
         </a>
-      </div>
+
+        {nextPost ? (
+          <a href={`/news/${nextPost.slug}`} class="hover:underline text-center sm:text-right">
+            Suivant &rarr;
+          </a>
+        ) : (
+          <span class="w-20"></span>
+        )}
+      </nav>
     </div>
   </article>
+
+  <!-- Navigation intra-article (flottante) -->
+  <div id="article-nav" class="fixed bottom-8 right-8 flex flex-col gap-2 opacity-0 transition-opacity duration-300 translate-y-4 pointer-events-none print:hidden">
+    <button id="prev-section-btn" class="p-3 bg-stone-900 text-white rounded-full shadow-lg hover:bg-stone-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all pointer-events-auto" aria-label="Article précédent">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+      </svg>
+    </button>
+    
+    <div class="flex items-center gap-2 pointer-events-auto bg-stone-900 rounded-full px-2 py-1 shadow-lg">
+        <div id="section-indicator" class="text-white text-xs font-bold text-center font-sans min-w-[3rem]">
+        <span id="current-section">1</span> / <span id="total-sections">1</span>
+        </div>
+        
+        <button id="play-section-btn" class="p-2 text-white hover:bg-stone-700 rounded-full transition-all" aria-label="Lire cette section">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="play-icon">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="pause-icon">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </button>
+    </div>
+
+    <button id="next-section-btn" class="p-3 bg-stone-900 text-white rounded-full shadow-lg hover:bg-stone-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all pointer-events-auto" aria-label="Article suivant">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
+  </div>
+
+  <script>
+    function initArticleNav() {
+      const article = document.querySelector('.prose');
+      if (!article) return;
+
+      const navContainer = document.getElementById('article-nav');
+      const prevBtn = document.getElementById('prev-section-btn');
+      const nextBtn = document.getElementById('next-section-btn');
+      const playBtn = document.getElementById('play-section-btn');
+      const currentSpan = document.getElementById('current-section');
+      const totalSpan = document.getElementById('total-sections');
+      const playIcon = document.getElementById('play-icon');
+      const pauseIcon = document.getElementById('pause-icon');
+
+      if (!navContainer || !prevBtn || !nextBtn || !playBtn || !currentSpan || !totalSpan) return;
+
+      // Identifier les sections basées sur les <hr>
+      const hrs = Array.from(article.querySelectorAll('hr'));
+      const sections = [];
+      
+      // Début de l'article
+      sections.push({ top: article.getBoundingClientRect().top + window.scrollY, element: article.firstElementChild as HTMLElement });
+
+      // Sections suivantes
+      hrs.forEach(hr => {
+        let nextEl = hr.nextElementSibling;
+        while (nextEl && nextEl.tagName === 'HR') {
+           nextEl = nextEl.nextElementSibling;
+        }
+        if (nextEl) {
+          sections.push({ top: hr.getBoundingClientRect().top + window.scrollY, element: nextEl as HTMLElement });
+        }
+      });
+
+      totalSpan.textContent = sections.length.toString();
+
+      if (sections.length > 1) {
+        navContainer.classList.remove('opacity-0', 'translate-y-4');
+        navContainer.classList.add('opacity-100', 'translate-y-0');
+      }
+
+      let activeIndex = 0;
+
+      const updateActiveSection = () => {
+        const scrollY = window.scrollY;
+        const offset = 200; 
+
+        let newIndex = 0;
+        for (let i = 0; i < sections.length; i++) {
+            const elTop = sections[i].element ? (sections[i].element.getBoundingClientRect().top + window.scrollY) : sections[i].top;
+            if (scrollY >= elTop - offset) {
+                newIndex = i;
+            } else {
+                break;
+            }
+        }
+        
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 50) {
+            newIndex = sections.length - 1;
+        }
+
+        if (newIndex !== activeIndex) {
+            activeIndex = newIndex;
+            currentSpan.textContent = (activeIndex + 1).toString();
+        }
+
+        (prevBtn as HTMLButtonElement).disabled = activeIndex <= 0;
+        (nextBtn as HTMLButtonElement).disabled = activeIndex >= sections.length - 1;
+      };
+
+      window.addEventListener('scroll', updateActiveSection, { passive: true });
+      updateActiveSection();
+
+      const scrollToSection = (index) => {
+          if (index < 0 || index >= sections.length) return;
+          const target = sections[index].element;
+          if (target) {
+              const headerOffset = 20; 
+              const elementPosition = target.getBoundingClientRect().top;
+              const offsetPosition = elementPosition + window.scrollY - headerOffset;
+
+              window.scrollTo({
+                  top: offsetPosition,
+                  behavior: "smooth"
+              });
+          }
+      };
+
+      const playSection = (index) => {
+          const ttsContainer = document.querySelector('.tts-player-container');
+          if (!ttsContainer) return;
+          if (index < 0 || index >= sections.length) return;
+          
+          const sectionEl = sections[index].element;
+          if (sectionEl && (ttsContainer as any)._playFromElement) {
+              (ttsContainer as any)._playFromElement(sectionEl);
+          }
+      };
+
+      prevBtn.addEventListener('click', () => {
+          const targetIndex = activeIndex - 1;
+          scrollToSection(targetIndex);
+          if (isPlaying) playSection(targetIndex);
+      });
+
+      nextBtn.addEventListener('click', () => {
+          const targetIndex = activeIndex + 1;
+          scrollToSection(targetIndex);
+          if (isPlaying) playSection(targetIndex);
+      });
+
+      // TTS Control
+      let isPlaying = false;
+
+      // Listen to global TTS state
+      window.addEventListener('tts-state-change', (e: any) => {
+         const state = e.detail.state;
+         isPlaying = state === 'playing';
+         if (isPlaying) {
+             playIcon?.classList.add('hidden');
+             pauseIcon?.classList.remove('hidden');
+         } else {
+             playIcon?.classList.remove('hidden');
+             pauseIcon?.classList.add('hidden');
+         }
+      });
+
+      playBtn.addEventListener('click', () => {
+          const ttsContainer = document.querySelector('.tts-player-container');
+          if (!ttsContainer) return;
+
+          if (isPlaying) {
+              // Pause/Stop
+              if ((ttsContainer as any)._togglePlay) {
+                  (ttsContainer as any)._togglePlay();
+              }
+          } else {
+              // Start playing current section
+              const currentSectionEl = sections[activeIndex].element;
+              if (currentSectionEl && (ttsContainer as any)._playFromElement) {
+                  (ttsContainer as any)._playFromElement(currentSectionEl);
+              } else if ((ttsContainer as any)._togglePlay) {
+                  // Fallback
+                  (ttsContainer as any)._togglePlay();
+              }
+          }
+      });
+    }
+
+    document.addEventListener('astro:page-load', initArticleNav);
+    document.addEventListener('DOMContentLoaded', initArticleNav);
+  </script>
 </Layout>

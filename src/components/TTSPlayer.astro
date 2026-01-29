@@ -163,6 +163,11 @@ const { title, readingTime } = Astro.props;
       const updateUI = (state: 'playing' | 'paused' | 'stopped' | 'error') => {
         currentState = state === 'error' ? 'stopped' : state;
         
+        // Dispatch event for other components (like floating nav)
+        window.dispatchEvent(new CustomEvent('tts-state-change', { 
+            detail: { state: currentState } 
+        }));
+
         if (state === 'playing') {
           playPauseButton.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -351,7 +356,25 @@ const { title, readingTime } = Astro.props;
          speak(remainingText, currentCharIndex);
       };
 
+      const playFromElement = (targetEl: HTMLElement) => {
+          if (!targetEl) return;
+          // Find the first word that is inside or constitutes the target element
+          const match = wordMap.find(w => targetEl.contains(w.element) || w.element === targetEl);
+          if (match) {
+              playAt(titleTextLen + match.start);
+          } else {
+              // Try next sibling if empty? or just ignore
+          }
+      };
+
+      const togglePlay = () => {
+          playPauseButton.click();
+      };
+
       (container as any)._playAt = playAt;
+      (container as any)._playFromElement = playFromElement;
+      (container as any)._togglePlay = togglePlay;
+
       if (!playAtGlobal) {
           playAtGlobal = playAt;
           titleTextLen = titleText.length;
