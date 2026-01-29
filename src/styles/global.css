@@ -38,3 +38,32 @@ h6 {
   color: #1c1917;
   padding: 1px 2px;
 }
+
+.tts-stop-button-style {
+  background-color: oklch(93.8% 0.127 124.321);
+  border-bottom: 2px solid oklch(76.8% 0.233 130.85);
+  color: #1c1917;
+  cursor: pointer;
+}
+
+.tts-button-style {
+  background-color: oklch(93.8% 0.127 124.321);
+  border-bottom: 2px solid oklch(76.8% 0.233 130.85);
+  color: #1c1917;
+  cursor: pointer;
+}
+
+.tts-button-style:hover {
+  background-color: oklch(88% 0.127 124.321);
+}
+
+.tts-stop-button-style {
+  background-color: oklch(70% 0.2 20);
+  border-bottom: 2px solid oklch(50% 0.3 20);
+  color: #fff;
+  cursor: pointer;
+}
+
+.tts-stop-button-style:hover {
+  background-color: oklch(60% 0.25 20);
+}
