@@ -19,7 +19,6 @@ const { title } = Astro.props;
   </head>
   <body class="flex flex-col min-h-screen">
     
-    <!-- Masthead Header -->
     <header class="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-6 text-center">
       <div class="border-b-4 border-stone-900 pb-2 mb-2">
         <h1 class="font-serif text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter text-stone-900 uppercase leading-none">
@@ -33,12 +32,10 @@ const { title } = Astro.props;
       </div>
     </header>
 
-    <!-- Main Content -->
     <main class="w-full max-w-6xl mx-auto px-4 sm:px-6 py-8">
       <slot />
     </main>
 
-    <!-- Footer -->
     <footer class="w-full max-w-6xl mx-auto px-4 sm:px-6 py-8 mt-12 border-t-4 border-stone-900">
       <div class="text-center font-serif text-sm text-stone-600">
         <p class="mb-2">&copy; {new Date().getFullYear()} HNPaper News. Printed in the Cloud :-)</p>

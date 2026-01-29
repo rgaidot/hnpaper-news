@@ -31,7 +31,6 @@ const readingTime = Math.ceil(words / wordsPerMinute);
 
 <Layout title={entry.data.title}>
   <article class="mx-auto max-w-3xl">
-    <!-- Header de l'article -->
     <header class="mb-10 text-center border-b-4 border-double border-stone-300 pb-8">
       <div class="flex flex-col items-center space-y-2 text-stone-600 font-sans text-sm uppercase tracking-widest">
         <span class="text-2xl font-bold">{formattedDate}</span>
@@ -40,7 +39,6 @@ const readingTime = Math.ceil(words / wordsPerMinute);
       <TTSPlayer title={entry.data.title} readingTime={readingTime} />
     </header>
     
-    <!-- Contenu Markdown -->
     <div class="prose prose-stone prose-lg max-w-none mx-auto text-justify
       prose-headings:font-serif prose-headings:font-bold prose-headings:text-stone-900
       prose-p:font-serif prose-p:text-stone-800
@@ -51,7 +49,6 @@ const readingTime = Math.ceil(words / wordsPerMinute);
       <Content />
     </div>
 
-    <!-- Liens Discussion & Source & Navigation -->
     <div class="mt-12 pt-8 border-t border-stone-900 flex flex-col gap-8 text-sm font-sans">
       <div class="space-y-1">
         {entry.data.discussionUrl && (
@@ -90,7 +87,6 @@ const readingTime = Math.ceil(words / wordsPerMinute);
     </div>
   </article>
 
-  <!-- Navigation intra-article (flottante) -->
   <div id="article-nav" class="fixed bottom-8 right-8 flex flex-col gap-2 opacity-0 transition-opacity duration-300 translate-y-4 pointer-events-none print:hidden">
     <button id="prev-section-btn" class="p-3 bg-stone-900 text-white rounded-full shadow-lg hover:bg-stone-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all pointer-events-auto" aria-label="Article précédent">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -137,14 +133,11 @@ const readingTime = Math.ceil(words / wordsPerMinute);
 
       if (!navContainer || !prevBtn || !nextBtn || !playBtn || !currentSpan || !totalSpan) return;
 
-      // Identifier les sections basées sur les <hr>
       const hrs = Array.from(article.querySelectorAll('hr'));
       const sections = [];
       
-      // Début de l'article
       sections.push({ top: article.getBoundingClientRect().top + window.scrollY, element: article.firstElementChild as HTMLElement });
 
-      // Sections suivantes
       hrs.forEach(hr => {
         let nextEl = hr.nextElementSibling;
         while (nextEl && nextEl.tagName === 'HR') {
@@ -232,10 +225,8 @@ const readingTime = Math.ceil(words / wordsPerMinute);
           if (isPlaying) playSection(targetIndex);
       });
 
-      // TTS Control
       let isPlaying = false;
 
-      // Listen to global TTS state
       window.addEventListener('tts-state-change', (e: any) => {
          const state = e.detail.state;
          isPlaying = state === 'playing';
@@ -253,17 +244,14 @@ const readingTime = Math.ceil(words / wordsPerMinute);
           if (!ttsContainer) return;
 
           if (isPlaying) {
-              // Pause/Stop
               if ((ttsContainer as any)._togglePlay) {
                   (ttsContainer as any)._togglePlay();
               }
           } else {
-              // Start playing current section
               const currentSectionEl = sections[activeIndex].element;
               if (currentSectionEl && (ttsContainer as any)._playFromElement) {
                   (ttsContainer as any)._playFromElement(currentSectionEl);
               } else if ((ttsContainer as any)._togglePlay) {
-                  // Fallback
                   (ttsContainer as any)._togglePlay();
               }
           }

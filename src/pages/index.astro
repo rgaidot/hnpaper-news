@@ -14,7 +14,6 @@ const getReadingTime = (body: string) => {
 
 <Layout title="The HNPaper Daily">
   
-  <!-- Headline Article -->
   {latestNews.length > 0 && (
     <article class="mb-12 pb-12 border-b-2 border-stone-900">
       <div class="max-w-3xl mx-auto">
@@ -33,7 +32,6 @@ const getReadingTime = (body: string) => {
     </article>
   )}
 
-  <!-- Secondary Articles Grid -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12 divide-y md:divide-y-0 divide-stone-300">
     {
       latestNews.slice(1).map((post) => (
