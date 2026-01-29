@@ -136,6 +136,7 @@ const readingTime = Math.ceil(words / wordsPerMinute);
       const hrs = Array.from(article.querySelectorAll('hr'));
       const sections = [];
       
+      // Identify sections
       sections.push({ top: article.getBoundingClientRect().top + window.scrollY, element: article.firstElementChild as HTMLElement });
 
       hrs.forEach(hr => {
@@ -146,6 +147,50 @@ const readingTime = Math.ceil(words / wordsPerMinute);
         if (nextEl) {
           sections.push({ top: hr.getBoundingClientRect().top + window.scrollY, element: nextEl as HTMLElement });
         }
+      });
+      
+      // Add anchors and IDs to sections
+      sections.forEach((section, index) => {
+          if (!section.element) return;
+          
+          const sectionId = `section-${index + 1}`;
+          section.element.id = sectionId;
+          
+          // Create anchor button
+          const anchorBtn = document.createElement('button');
+          anchorBtn.className = 'group absolute -ml-8 mt-1 p-1 text-stone-400 hover:text-stone-900 transition-colors hidden sm:inline-flex items-center justify-center';
+          anchorBtn.setAttribute('aria-label', `Lien vers la section ${index + 1}`);
+          anchorBtn.title = "Copier le lien vers cette section";
+          anchorBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+          `;
+          
+          // Make the parent relative to position the anchor
+          if (getComputedStyle(section.element).position === 'static') {
+            section.element.style.position = 'relative';
+          }
+          
+          anchorBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              const url = new URL(window.location.href);
+              url.hash = `#${sectionId}`;
+              navigator.clipboard.writeText(url.toString()).then(() => {
+                  // Visual feedback
+                  const originalHTML = anchorBtn.innerHTML;
+                  anchorBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  `;
+                  setTimeout(() => {
+                      anchorBtn.innerHTML = originalHTML;
+                  }, 2000);
+              });
+          });
+
+          section.element.insertBefore(anchorBtn, section.element.firstChild);
       });
 
       totalSpan.textContent = sections.length.toString();
@@ -201,6 +246,17 @@ const readingTime = Math.ceil(words / wordsPerMinute);
               });
           }
       };
+      
+      // Handle initial hash
+      if (window.location.hash) {
+          const hash = window.location.hash.substring(1); // remove #
+          const match = hash.match(/^section-(\d+)$/);
+          if (match) {
+              const index = parseInt(match[1], 10) - 1;
+              // Small delay to ensure layout is stable
+              setTimeout(() => scrollToSection(index), 100);
+          }
+      }
 
       const playSection = (index) => {
           const ttsContainer = document.querySelector('.tts-player-container');
