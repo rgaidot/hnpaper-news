@@ -273,6 +273,30 @@ const readingTime = Math.ceil(words / wordsPerMinute);
           if (isPlaying) playSection(targetIndex);
       });
 
+      // Navigation clavier avec Autoplay
+      document.addEventListener('keydown', (e) => {
+          // Ignorer si des touches de modification sont pressées
+          if (e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) return;
+
+          // Ignorer si le focus est sur un élément de formulaire
+          const target = e.target as HTMLElement;
+          if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA') return;
+          
+          if (e.key === 'ArrowLeft') {
+              const targetIndex = activeIndex - 1;
+              if (targetIndex >= 0) {
+                  scrollToSection(targetIndex);
+                  playSection(targetIndex);
+              }
+          } else if (e.key === 'ArrowRight') {
+              const targetIndex = activeIndex + 1;
+              if (targetIndex < sections.length) {
+                  scrollToSection(targetIndex);
+                  playSection(targetIndex);
+              }
+          }
+      });
+
       let isPlaying = false;
 
       window.addEventListener('tts-state-change', (e: any) => {
