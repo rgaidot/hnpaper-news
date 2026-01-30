@@ -74,28 +74,28 @@ const readingTime = Math.ceil(words / wordsPerMinute);
     </div>
   </article>
 
-  <div id="article-nav" class="fixed bottom-8 right-8 flex flex-col items-end gap-2 opacity-0 transition-opacity duration-300 translate-y-4 pointer-events-none print:hidden">
-    <div class="flex items-center pointer-events-auto bg-stone-900 rounded-full px-1.5 py-1 shadow-lg w-[10rem]">
-      <button id="prev-section-btn" class="p-1.5 text-white hover:bg-stone-700 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer" aria-label="Article précédent">
+  <div id="article-nav" class="fixed bottom-8 right-8 flex flex-col items-end gap-1 opacity-0 transition-opacity duration-300 translate-y-4 pointer-events-none print:hidden">
+    <div class="flex items-center gap-0 pointer-events-auto bg-stone-900 rounded-full px-0.5 py-0.5 shadow-lg w-[6rem]">
+      <button id="prev-section-btn" class="p-0.5 text-white hover:bg-stone-700 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer" aria-label="Article précédent">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
         </svg>
       </button>
 
-      <div id="section-indicator" class="text-white text-xs font-bold text-center font-sans flex-1 border-l border-r border-stone-700 mx-1">
-        <span id="current-section">1</span> / <span id="total-sections">80</span>
+      <div id="section-indicator" class="text-white text-xs font-bold text-center font-sans flex-1 border-l border-r border-stone-700">
+        <span id="current-section">1</span>/<span id="total-sections">80</span>
       </div>
 
-      <button id="next-section-btn" class="p-1.5 text-white hover:bg-stone-700 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer" aria-label="Article suivant">
+      <button id="next-section-btn" class="p-0.5 text-white hover:bg-stone-700 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer" aria-label="Article suivant">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
     </div>
     
-    <div class="flex items-center pointer-events-auto bg-stone-900 rounded-full px-1.5 py-1 shadow-lg w-[10rem]">
+    <div class="flex items-center gap-0 pointer-events-auto bg-stone-900 rounded-full px-0.5 py-0.5 shadow-lg w-[6rem]">
         <div class="relative group flex items-center justify-center">
-            <button class="p-1.5 text-stone-400 hover:text-white transition-colors cursor-help rounded-full hover:bg-stone-700" aria-label="Raccourcis clavier">
+            <button class="p-0.5 text-stone-400 hover:text-white transition-colors cursor-help rounded-full hover:bg-stone-700" aria-label="Raccourcis clavier">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -118,15 +118,15 @@ const readingTime = Math.ceil(words / wordsPerMinute);
             </div>
         </div>
 
-        <div class="w-px h-5 bg-stone-700 mx-1"></div>
+        <div class="w-px h-4 bg-stone-700"></div>
 
-        <button id="floating-speed-btn" class="text-white text-xs font-bold hover:text-stone-300 transition-colors px-2 text-center font-sans hover:bg-stone-700 rounded-full py-1 flex-1" aria-label="Vitesse de lecture" title="Changer la vitesse">
+        <button id="floating-speed-btn" class="text-white text-xs font-bold hover:text-stone-300 transition-colors px-1 text-center font-sans hover:bg-stone-700 rounded-full py-0.5 flex-1" aria-label="Vitesse de lecture" title="Changer la vitesse">
             1x
         </button>
         
-        <div class="w-px h-5 bg-stone-700 mx-1"></div>
+        <div class="w-px h-4 bg-stone-700"></div>
         
-        <button id="play-section-btn" class="p-1.5 text-white hover:bg-stone-700 rounded-full transition-all cursor-pointer" aria-label="Lire cette section">
+        <button id="play-section-btn" class="p-0.5 text-white hover:bg-stone-700 rounded-full transition-all cursor-pointer" aria-label="Lire cette section">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="play-icon">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
