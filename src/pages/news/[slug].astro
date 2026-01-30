@@ -50,19 +50,6 @@ const readingTime = Math.ceil(words / wordsPerMinute);
     </div>
 
     <div class="mt-12 pt-8 border-t border-stone-900 flex flex-col gap-8 text-sm font-sans">
-      <div class="space-y-1">
-        {entry.data.discussionUrl && (
-          <p>
-            <strong>Discussion HN :</strong> <a href={entry.data.discussionUrl} target="_blank" rel="noopener noreferrer" class="text-stone-900 hover:underline">Participer</a>
-          </p>
-        )}
-        {entry.data.sourceUrl && (
-          <p>
-            <strong>Source :</strong> <a href={entry.data.sourceUrl} target="_blank" rel="noopener noreferrer" class="text-stone-900 hover:underline">Lire l'original</a>
-          </p>
-        )}
-      </div>
-      
       <nav class="flex flex-col sm:flex-row justify-between items-center gap-4 text-stone-900 font-bold uppercase tracking-widest">
         {prevPost ? (
           <a href={`/news/${prevPost.slug}`} class="hover:underline text-center sm:text-left">
