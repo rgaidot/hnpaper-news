@@ -92,6 +92,12 @@ export class ArticleNavigation {
             element.style.position = 'relative';
         }
 
+        // Add visual number
+        const numberSpan = document.createElement('span');
+        numberSpan.className = 'font-bold text-5xl text-stone-500 mr-2 select-none';
+        numberSpan.textContent = `${labelIndex}.`;
+        element.insertBefore(numberSpan, element.firstChild);
+
         const anchorBtn = document.createElement('button');
         anchorBtn.className = 'group absolute -ml-8 mt-1 p-1 text-stone-400 hover:text-stone-900 transition-colors hidden sm:inline-flex items-center justify-center cursor-pointer';
         anchorBtn.setAttribute('aria-label', `Lien vers la section ${labelIndex}`);
