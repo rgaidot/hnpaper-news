@@ -74,64 +74,64 @@ const readingTime = Math.ceil(words / wordsPerMinute);
     </div>
   </article>
 
-  <div id="article-nav" class="fixed bottom-8 right-8 flex flex-col items-end gap-1 opacity-0 transition-opacity duration-300 translate-y-4 pointer-events-none print:hidden">
-    <div class="flex items-center gap-0 pointer-events-auto bg-stone-900 rounded-full px-0.5 py-0.5 shadow-lg w-[6rem]">
-      <button id="prev-section-btn" class="p-0.5 text-white hover:bg-stone-700 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer" aria-label="Article précédent">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <div id="article-nav" class="fixed bottom-8 right-8 flex flex-col items-end gap-2 opacity-0 transition-opacity duration-300 translate-y-4 pointer-events-none print:hidden">
+    <div class="flex items-center gap-0 pointer-events-auto bg-stone-900 rounded-full px-1 py-1 shadow-lg w-[10rem]">
+      <button id="prev-section-btn" class="p-2 text-white hover:bg-stone-700 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer" aria-label="Article précédent">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
         </svg>
       </button>
 
-      <div id="section-indicator" class="text-white text-xs font-bold text-center font-sans flex-1 border-l border-r border-stone-700">
+      <div id="section-indicator" class="text-white text-sm font-bold text-center font-sans flex-1 border-l border-r border-stone-700 px-1">
         <span id="current-section">1</span>/<span id="total-sections">80</span>
       </div>
 
-      <button id="next-section-btn" class="p-0.5 text-white hover:bg-stone-700 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer" aria-label="Article suivant">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <button id="next-section-btn" class="p-2 text-white hover:bg-stone-700 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer" aria-label="Article suivant">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
     </div>
     
-    <div class="flex items-center gap-0 pointer-events-auto bg-stone-900 rounded-full px-0.5 py-0.5 shadow-lg w-[6rem]">
+    <div class="flex items-center gap-0 pointer-events-auto bg-stone-900 rounded-full px-1 py-1 shadow-lg w-[10rem]">
         <div class="relative group flex items-center justify-center">
-            <button class="p-0.5 text-stone-400 hover:text-white transition-colors cursor-help rounded-full hover:bg-stone-700" aria-label="Raccourcis clavier">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <button class="p-2 text-stone-400 hover:text-white transition-colors cursor-help rounded-full hover:bg-stone-700" aria-label="Raccourcis clavier">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </button>
-            <div class="absolute bottom-full right-0 mb-3 w-40 p-2.5 bg-stone-800 text-stone-200 text-xs rounded-lg shadow-xl opacity-0 invisible transition-all duration-200 transform translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 z-50 border border-stone-700 origin-bottom-right">
-                 <div class="font-bold mb-1.5 text-white uppercase tracking-wider text-[9px] border-b border-stone-600 pb-1">Raccourcis</div>
-                 <div class="grid grid-cols-[auto_1fr] gap-x-2.5 gap-y-1.5 items-center">
+            <div class="absolute bottom-full right-0 mb-3 w-44 p-3 bg-stone-800 text-stone-200 text-xs rounded-lg shadow-xl opacity-0 invisible transition-all duration-200 transform translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 z-50 border border-stone-700 origin-bottom-right">
+                 <div class="font-bold mb-2 text-white uppercase tracking-wider text-[10px] border-b border-stone-600 pb-1.5">Raccourcis</div>
+                 <div class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 items-center">
                      <div class="flex gap-1 justify-center">
-                        <kbd class="bg-stone-600 px-1 py-0.5 rounded text-center min-w-[18px] font-mono text-white shadow-sm border-b border-stone-900 text-[10px]">←</kbd>
-                        <kbd class="bg-stone-600 px-1 py-0.5 rounded text-center min-w-[18px] font-mono text-white shadow-sm border-b border-stone-900 text-[10px]">→</kbd>
+                        <kbd class="bg-stone-600 px-1.5 py-1 rounded text-center min-w-[20px] font-mono text-white shadow-sm border-b border-stone-900 text-[11px]">←</kbd>
+                        <kbd class="bg-stone-600 px-1.5 py-1 rounded text-center min-w-[20px] font-mono text-white shadow-sm border-b border-stone-900 text-[11px]">→</kbd>
                      </div>
-                     <span class="text-[11px]">Naviguer</span>
+                     <span class="text-[12px]">Naviguer</span>
                      
                      <div class="flex justify-center">
-                        <kbd class="bg-stone-600 px-1.5 py-0.5 rounded text-center font-mono text-white shadow-sm border-b border-stone-900 text-[9px]">Espace</kbd>
+                        <kbd class="bg-stone-600 px-2 py-1 rounded text-center font-mono text-white shadow-sm border-b border-stone-900 text-[10px]">Espace</kbd>
                      </div>
-                     <span class="text-[11px]">Lecture</span>
+                     <span class="text-[12px]">Lecture</span>
                  </div>
                  <div class="absolute -bottom-1 right-1.5 w-2 h-2 bg-stone-800 transform rotate-45 border-b border-r border-stone-700"></div>
             </div>
         </div>
 
-        <div class="w-px h-4 bg-stone-700"></div>
+        <div class="w-px h-5 bg-stone-700"></div>
 
-        <button id="floating-speed-btn" class="text-white text-xs font-bold hover:text-stone-300 transition-colors px-1 text-center font-sans hover:bg-stone-700 rounded-full py-0.5 flex-1" aria-label="Vitesse de lecture" title="Changer la vitesse">
+        <button id="floating-speed-btn" class="text-white text-sm font-bold hover:text-stone-300 transition-colors px-2 text-center font-sans hover:bg-stone-700 rounded-full py-1 flex-1" aria-label="Vitesse de lecture" title="Changer la vitesse">
             1x
         </button>
         
-        <div class="w-px h-4 bg-stone-700"></div>
+        <div class="w-px h-5 bg-stone-700"></div>
         
-        <button id="play-section-btn" class="p-0.5 text-white hover:bg-stone-700 rounded-full transition-all cursor-pointer" aria-label="Lire cette section">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="play-icon">
+        <button id="play-section-btn" class="p-2 text-white hover:bg-stone-700 rounded-full transition-all cursor-pointer" aria-label="Lire cette section">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="play-icon">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="pause-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="pause-icon">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
         </button>
