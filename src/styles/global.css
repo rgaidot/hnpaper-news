@@ -22,6 +22,13 @@ h6 {
   @apply font-serif;
 }
 
+@layer base {
+  a {
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+}
+
 .tts-word {
   border-radius: 2px;
   transition: all 0.15s ease;
