@@ -8,8 +8,6 @@ const news = defineCollection({
     author: z.string(),
     tags: z.array(z.string()).optional(),
     layout: z.string().optional(),
-    discussionUrl: z.string().url().optional(),
-    sourceUrl: z.string().url().optional(),
   }),
 });
 
