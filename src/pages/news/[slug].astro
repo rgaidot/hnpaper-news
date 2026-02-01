@@ -1,9 +1,9 @@
 ---
-import Layout from '../../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import TTSPlayer from '../../components/TTSPlayer.astro';
+import Layout from '../../layouts/Layout.astro';
 
 export async function getStaticPaths() {
   const newsEntries = await getCollection('news');
@@ -11,7 +11,7 @@ export async function getStaticPaths() {
 
   return sortedNews.map((entry, index) => ({
     params: { slug: entry.slug },
-    props: { 
+    props: {
       entry,
       nextPost: index - 1 >= 0 ? sortedNews[index - 1] : null,
       prevPost: index + 1 < sortedNews.length ? sortedNews[index + 1] : null,
@@ -22,7 +22,9 @@ export async function getStaticPaths() {
 const { entry, nextPost, prevPost } = Astro.props;
 const { Content } = await entry.render();
 
-const formattedDate = format(entry.data.date, 'EEEE d MMMM yyyy à HH:mm', { locale: fr });
+const formattedDate = format(entry.data.date, 'EEEE d MMMM yyyy à HH:mm', {
+  locale: fr,
+});
 
 const wordsPerMinute = 200;
 const words = entry.body.trim().split(/\s+/).length;
@@ -31,126 +33,249 @@ const readingTime = Math.ceil(words / wordsPerMinute);
 
 <Layout title={entry.data.title}>
   <article class="mx-auto max-w-3xl">
-    <header class="mb-10 text-center border-b-4 border-double border-stone-300 pb-8">
-      <div class="flex flex-col items-center space-y-2 text-stone-600 font-sans text-sm uppercase tracking-widest">
+    <header
+      class="mb-10 text-center border-b-4 border-double border-stone-300 pb-8"
+    >
+      <div
+        class="flex flex-col items-center space-y-2 text-stone-600 font-sans text-sm uppercase tracking-widest"
+      >
         <span class="text-2xl font-bold">{formattedDate}</span>
         <span class="italic text-xs">Par {entry.data.author}</span>
       </div>
       <TTSPlayer title={entry.data.title} readingTime={readingTime} />
     </header>
-    
-    <div class="prose prose-stone prose-lg max-w-none mx-auto text-justify
+
+    <div
+      class="prose prose-stone prose-lg max-w-none mx-auto text-justify
       prose-headings:font-serif prose-headings:font-bold prose-headings:text-stone-900
       prose-p:font-serif prose-p:text-stone-800
       prose-a:text-stone-900 prose-a:underline prose-a:decoration-1 hover:prose-a:decoration-2 prose-a:font-normal prose-strong:text-base
       prose-blockquote:border-l-2 prose-blockquote:border-stone-900 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-stone-700
-      prose-img:border prose-img:border-stone-900 prose-img:p-1
-    ">
+      prose-img:border prose-img:border-stone-900 prose-img:p-1"
+    >
       <Content />
     </div>
 
-    <div class="mt-12 pt-8 border-t border-stone-900 flex flex-col gap-8 text-sm font-sans">
-      <nav class="flex flex-col sm:flex-row justify-between items-center gap-4 text-stone-900 font-bold uppercase tracking-widest">
-        {prevPost ? (
-          <a href={`/news/${prevPost.slug}`} class="hover:underline text-center sm:text-left">
-            &larr; Précédent
-          </a>
-        ) : (
-          <span class="w-20"></span>
-        )}
+    <div
+      class="mt-12 pt-8 border-t border-stone-900 flex flex-col gap-8 text-sm font-sans"
+    >
+      <nav
+        class="flex flex-col sm:flex-row justify-between items-center gap-4 text-stone-900 font-bold uppercase tracking-widest"
+      >
+        {
+          prevPost ? (
+            <a
+              href={`/news/${prevPost.slug}`}
+              class="hover:underline text-center sm:text-left"
+            >
+              &larr; Précédent
+            </a>
+          ) : (
+            <span class="w-20" />
+          )
+        }
 
-        <a href="/" class="hover:underline text-center">
-          Retour à la Une
-        </a>
+        <a href="/" class="hover:underline text-center"> Retour à la Une </a>
 
-        {nextPost ? (
-          <a href={`/news/${nextPost.slug}`} class="hover:underline text-center sm:text-right">
-            Suivant &rarr;
-          </a>
-        ) : (
-          <span class="w-20"></span>
-        )}
+        {
+          nextPost ? (
+            <a
+              href={`/news/${nextPost.slug}`}
+              class="hover:underline text-center sm:text-right"
+            >
+              Suivant &rarr;
+            </a>
+          ) : (
+            <span class="w-20" />
+          )
+        }
       </nav>
     </div>
   </article>
 
-  <div id="article-nav" class="fixed bottom-8 right-8 flex flex-col items-end gap-2 opacity-0 transition-opacity duration-300 translate-y-4 pointer-events-none print:hidden">
-    <div class="flex items-center gap-0 pointer-events-auto bg-stone-900 rounded-full px-1 py-1 shadow-lg w-[10rem]">
-      <button id="prev-section-btn" class="p-2 text-white hover:bg-stone-700 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer" aria-label="Article précédent">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+  <div
+    id="article-nav"
+    class="fixed bottom-8 right-8 flex flex-col items-end gap-2 opacity-0 transition-opacity duration-300 translate-y-4 pointer-events-none print:hidden"
+  >
+    <div
+      class="flex items-center gap-0 pointer-events-auto bg-stone-900 rounded-full px-1 py-1 shadow-lg w-[10rem]"
+    >
+      <button
+        id="prev-section-btn"
+        class="p-2 text-white hover:bg-stone-700 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+        aria-label="Article précédent"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M5 15l7-7 7 7"></path>
         </svg>
       </button>
 
-      <div id="section-indicator" class="text-white text-sm font-bold text-center font-sans flex-1 border-l border-r border-stone-700 px-1">
+      <div
+        id="section-indicator"
+        class="text-white text-sm font-bold text-center font-sans flex-1 border-l border-r border-stone-700 px-1"
+      >
         <span id="current-section">1</span>/<span id="total-sections">80</span>
       </div>
 
-      <button id="next-section-btn" class="p-2 text-white hover:bg-stone-700 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer" aria-label="Article suivant">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+      <button
+        id="next-section-btn"
+        class="p-2 text-white hover:bg-stone-700 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+        aria-label="Article suivant"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M19 9l-7 7-7-7"></path>
         </svg>
       </button>
     </div>
-    
-    <div class="flex items-center gap-0 pointer-events-auto bg-stone-900 rounded-full px-1 py-1 shadow-lg w-[10rem]">
-        <div class="relative group flex items-center justify-center">
-            <button class="p-2 text-stone-400 hover:text-white transition-colors cursor-help rounded-full hover:bg-stone-700" aria-label="Raccourcis clavier">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            </button>
-            <div class="absolute bottom-full right-0 mb-3 w-44 p-3 bg-stone-800 text-stone-200 text-xs rounded-lg shadow-xl opacity-0 invisible transition-all duration-200 transform translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 z-50 border border-stone-700 origin-bottom-right">
-                 <div class="font-bold mb-2 text-white uppercase tracking-wider text-[10px] border-b border-stone-600 pb-1.5">Raccourcis</div>
-                 <div class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 items-center">
-                     <div class="flex gap-1 justify-center">
-                        <kbd class="bg-stone-600 px-1.5 py-1 rounded text-center min-w-[20px] font-mono text-white shadow-sm border-b border-stone-900 text-[11px]">←</kbd>
-                        <kbd class="bg-stone-600 px-1.5 py-1 rounded text-center min-w-[20px] font-mono text-white shadow-sm border-b border-stone-900 text-[11px]">→</kbd>
-                     </div>
-                     <span class="text-[12px]">Naviguer</span>
-                     
-                     <div class="flex justify-center">
-                        <kbd class="bg-stone-600 px-2 py-1 rounded text-center font-mono text-white shadow-sm border-b border-stone-900 text-[10px]">Espace</kbd>
-                     </div>
-                     <span class="text-[12px]">Lecture</span>
-                 </div>
-                 <div class="absolute -bottom-1 right-1.5 w-2 h-2 bg-stone-800 transform rotate-45 border-b border-r border-stone-700"></div>
+
+    <div
+      class="flex items-center gap-0 pointer-events-auto bg-stone-900 rounded-full px-1 py-1 shadow-lg w-[10rem]"
+    >
+      <div class="relative group flex items-center justify-center">
+        <button
+          class="p-2 text-stone-400 hover:text-white transition-colors cursor-help rounded-full hover:bg-stone-700"
+          aria-label="Raccourcis clavier"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            ></path>
+          </svg>
+        </button>
+        <div
+          class="absolute bottom-full right-0 mb-3 w-44 p-3 bg-stone-800 text-stone-200 text-xs rounded-lg shadow-xl opacity-0 invisible transition-all duration-200 transform translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 z-50 border border-stone-700 origin-bottom-right"
+        >
+          <div
+            class="font-bold mb-2 text-white uppercase tracking-wider text-[10px] border-b border-stone-600 pb-1.5"
+          >
+            Raccourcis
+          </div>
+          <div class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 items-center">
+            <div class="flex gap-1 justify-center">
+              <kbd
+                class="bg-stone-600 px-1.5 py-1 rounded text-center min-w-[20px] font-mono text-white shadow-sm border-b border-stone-900 text-[11px]"
+                >←</kbd
+              >
+              <kbd
+                class="bg-stone-600 px-1.5 py-1 rounded text-center min-w-[20px] font-mono text-white shadow-sm border-b border-stone-900 text-[11px]"
+                >→</kbd
+              >
             </div>
+            <span class="text-[12px]">Naviguer</span>
+
+            <div class="flex justify-center">
+              <kbd
+                class="bg-stone-600 px-2 py-1 rounded text-center font-mono text-white shadow-sm border-b border-stone-900 text-[10px]"
+                >Espace</kbd
+              >
+            </div>
+            <span class="text-[12px]">Lecture</span>
+          </div>
+          <div
+            class="absolute -bottom-1 right-1.5 w-2 h-2 bg-stone-800 transform rotate-45 border-b border-r border-stone-700"
+          >
+          </div>
         </div>
+      </div>
 
-        <div class="w-px h-5 bg-stone-700"></div>
+      <div class="w-px h-5 bg-stone-700"></div>
 
-        <button id="floating-speed-btn" class="text-white text-sm font-bold hover:text-stone-300 transition-colors px-2 text-center font-sans hover:bg-stone-700 rounded-full py-1 flex-1" aria-label="Vitesse de lecture" title="Changer la vitesse">
-            1x
-        </button>
-        
-        <div class="w-px h-5 bg-stone-700"></div>
-        
-        <button id="play-section-btn" class="p-2 text-white hover:bg-stone-700 rounded-full transition-all cursor-pointer" aria-label="Lire cette section">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="play-icon">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="pause-icon">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-        </button>
+      <button
+        id="floating-speed-btn"
+        class="text-white text-sm font-bold hover:text-stone-300 transition-colors px-2 text-center font-sans hover:bg-stone-700 rounded-full py-1 flex-1"
+        aria-label="Vitesse de lecture"
+        title="Changer la vitesse"
+      >
+        1x
+      </button>
+
+      <div class="w-px h-5 bg-stone-700"></div>
+
+      <button
+        id="play-section-btn"
+        class="p-2 text-white hover:bg-stone-700 rounded-full transition-all cursor-pointer"
+        aria-label="Lire cette section"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          id="play-icon"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+          ></path>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6 hidden"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          id="pause-icon"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </button>
     </div>
   </div>
 
   <script>
-    import { ArticleNavigation } from '../../scripts/client/ArticleNavigation';
+    import { ArticleNavigation } from "../../scripts/client/ArticleNavigation";
 
     function init() {
       new ArticleNavigation();
     }
 
-    document.addEventListener('astro:page-load', init);
-    
-    if (document.readyState !== 'loading') {
-        init();
+    document.addEventListener("astro:page-load", init);
+
+    if (document.readyState !== "loading") {
+      init();
     } else {
-        document.addEventListener('DOMContentLoaded', init);
+      document.addEventListener("DOMContentLoaded", init);
     }
   </script>
 </Layout>
