@@ -33,7 +33,7 @@ const getReadingTime = (body: string) => {
     {
       page.data.map((post) => (
         <article class="flex flex-col border-b border-stone-300 pb-8 sm:border-0 sm:pb-0">
-          <div class="mb-2 text-xs font-bold tracking-widest text-stone-500 uppercase border-b border-stone-200 pb-1 flex justify-between w-full">
+          <div class="mb-2 text-lg font-bold tracking-widest text-stone-500 uppercase border-b border-stone-200 pb-1 flex justify-between w-full">
             <span>
               {new Date(post.data.date).toLocaleDateString("fr-FR", {
                 day: "numeric",
@@ -44,14 +44,14 @@ const getReadingTime = (body: string) => {
             <span>{getReadingTime(post.body)} min</span>
           </div>
 
-          <p class="text-stone-700 font-serif text-sm leading-relaxed mb-4 flex-grow line-clamp-4 text-justify">
+          <p class="text-stone-700 font-serif text-base leading-relaxed mb-4 flex-grow line-clamp-4 text-justify">
             {post.body.split("---")[0]?.replace(/^#+\s/, "")}
           </p>
 
           <div class="mt-auto">
             <a
               href={`/news/${post.slug}`}
-              class="text-xs font-bold uppercase tracking-widest hover:underline text-stone-900"
+              class="text-base font-bold uppercase tracking-widest hover:underline text-stone-900"
             >
               Lire &rarr;
             </a>
