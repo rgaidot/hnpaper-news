@@ -11,6 +11,7 @@
 *   **`.github/workflows/deploy.yml`**: The GitHub Actions workflow that automatically builds and deploys the site to GitHub Pages upon pushing to the `main` branch.
 *   **`src/styles/global.css`**: Global CSS styles.
 *   **`src/components/TTSPlayer.astro`**: Astro component responsible for rendering the Text-to-Speech player.
+*   **`src/components/ArticleFloatingNav.astro`**: Astro component that renders the floating navigation bar (next/prev section, speed control) and initializes the navigation logic.
 *   **`src/scripts/client/TTSController.ts`**: TypeScript module that manages the client-side logic for Text-to-Speech playback.
 *   **`src/scripts/client/ArticleNavigation.ts`**: TypeScript module handling article section navigation and UI interactions.
 
@@ -77,6 +78,7 @@ The website integrates Text-to-Speech capabilities to allow users to listen to t
 *   **`TTSController.ts`**: Manages audio playback using the Web Speech API. It communicates with other components via custom window events (e.g., `tts:cmd:toggle`, `tts:state-changed`).
 
 ### Article Navigation
+*   **`ArticleFloatingNav.astro`**: Reusable component that encapsulates the UI for the floating navigation bar.
 *   **`ArticleNavigation.ts`**: Provides advanced navigation features within articles.
     *   **Sectioning**: Automatically detects sections based on horizontal rules (`<hr>`) and adds anchor links.
     *   **Scroll Spy**: Highlights the current section in the floating UI as the user scrolls.
