@@ -44,24 +44,12 @@ export class TTSController {
 
     this.titleText = (this.container.getAttribute('data-title') || '') + '. ';
 
-    // Initialize silent audio
     this.silentAudio = document.createElement('audio');
     this.silentAudio.src = this.SILENT_AUDIO_URL;
-    this.silentAudio.loop = true;
-    this.silentAudio.volume = 0.01; // Almost muted
-    // iOS/Mobile requirements
+    this.silentAudio.volume = 0.001;
     this.silentAudio.setAttribute('playsinline', '');
-    this.silentAudio.style.display = 'none';
     document.body.appendChild(this.silentAudio);
-
-    // Force Keep-Alive: If system pauses silent audio while we are playing, resume it.
-    this.silentAudio.addEventListener('pause', () => {
-        if (this.state === 'playing') {
-            console.log('System paused silent audio, forcing resume...');
-            this.silentAudio?.play().catch(() => {});
-        }
-    });
-
+    
     this.init();
   }
 
@@ -175,33 +163,42 @@ export class TTSController {
 
     if (this.sentences.length === 0) return;
 
-    this.updateState("playing");
+    this.updateState('playing');
     this.requestWakeLock();
     this.setupMediaSession();
-
-    this.silentAudio
-      ?.play()
-      .catch((e) => console.warn("Silent audio play failed", e));
+    
+    // Start silent audio to keep session alive
+    if (this.silentAudio) {
+      this.silentAudio.currentTime = 0;
+      this.silentAudio?.play().catch(e => console.warn('Silent audio play failed', e));
+    }
 
     this.speakSentence();
   }
 
   public pause() {
-    if (this.state === "playing") {
-      this.updateState("paused");
-      this.releaseWakeLock();
-      this.silentAudio?.pause();
-      window.speechSynthesis.cancel();
-    }
-  }
-
+        if (this.state === 'playing') {
+          this.updateState('paused');
+          this.releaseWakeLock();
+          
+          if (this.silentAudio) {
+            this.silentAudio.pause();
+            this.silentAudio.currentTime = 0; // Reset silent audio
+          }
+    
+          window.speechSynthesis.cancel();
+        }
+      }
   public resume() {
-    if (this.state === "paused") {
-      this.updateState("playing");
+    if (this.state === 'paused') {
+      this.updateState('playing');
       this.requestWakeLock();
-      this.silentAudio
-        ?.play()
-        .catch((e) => console.warn("Silent audio resume failed", e));
+      
+      if (this.silentAudio) {
+        this.silentAudio.currentTime = 0; // Reset silent audio
+        this.silentAudio?.play().catch(e => console.warn('Silent audio resume failed', e));
+      }
+
       this.speakSentence();
     }
   }
