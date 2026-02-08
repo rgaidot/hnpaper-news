@@ -42,11 +42,25 @@ export class TTSController {
     this.statusEl = this.container.querySelector(".tts-status");
     this.readingTimeEl = this.container.querySelector(".tts-reading-time");
 
-    this.titleText = (this.container.getAttribute("data-title") || "") + ". ";
+    this.titleText = (this.container.getAttribute('data-title') || '') + '. ';
 
-    this.silentAudio = new Audio(this.SILENT_AUDIO_URL);
+    // Initialize silent audio
+    this.silentAudio = document.createElement('audio');
+    this.silentAudio.src = this.SILENT_AUDIO_URL;
     this.silentAudio.loop = true;
-    this.silentAudio.volume = 0.01;
+    this.silentAudio.volume = 0.01; // Almost muted
+    // iOS/Mobile requirements
+    this.silentAudio.setAttribute('playsinline', '');
+    this.silentAudio.style.display = 'none';
+    document.body.appendChild(this.silentAudio);
+
+    // Force Keep-Alive: If system pauses silent audio while we are playing, resume it.
+    this.silentAudio.addEventListener('pause', () => {
+        if (this.state === 'playing') {
+            console.log('System paused silent audio, forcing resume...');
+            this.silentAudio?.play().catch(() => {});
+        }
+    });
 
     this.init();
   }
