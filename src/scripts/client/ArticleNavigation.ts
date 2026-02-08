@@ -6,8 +6,6 @@ interface Section {
 export class ArticleNavigation {
   private sections: Section[] = [];
   private activeIndex: number = 0;
-
-  // UI Elements
   private navContainer: HTMLElement | null;
   private prevBtn: HTMLButtonElement | null;
   private nextBtn: HTMLButtonElement | null;
@@ -19,15 +17,21 @@ export class ArticleNavigation {
   private speedBtn: HTMLElement | null;
 
   constructor() {
-    this.navContainer = document.getElementById('article-nav');
-    this.prevBtn = document.getElementById('prev-section-btn') as HTMLButtonElement;
-    this.nextBtn = document.getElementById('next-section-btn') as HTMLButtonElement;
-    this.playBtn = document.getElementById('play-section-btn') as HTMLButtonElement;
-    this.currentSpan = document.getElementById('current-section');
-    this.totalSpan = document.getElementById('total-sections');
-    this.playIcon = document.getElementById('play-icon');
-    this.pauseIcon = document.getElementById('pause-icon');
-    this.speedBtn = document.getElementById('floating-speed-btn');
+    this.navContainer = document.getElementById("article-nav");
+    this.prevBtn = document.getElementById(
+      "prev-section-btn",
+    ) as HTMLButtonElement;
+    this.nextBtn = document.getElementById(
+      "next-section-btn",
+    ) as HTMLButtonElement;
+    this.playBtn = document.getElementById(
+      "play-section-btn",
+    ) as HTMLButtonElement;
+    this.currentSpan = document.getElementById("current-section");
+    this.totalSpan = document.getElementById("total-sections");
+    this.playIcon = document.getElementById("play-icon");
+    this.pauseIcon = document.getElementById("pause-icon");
+    this.speedBtn = document.getElementById("floating-speed-btn");
 
     this.init();
   }
@@ -42,13 +46,12 @@ export class ArticleNavigation {
   }
 
   private scanSections() {
-    const article = document.querySelector('.prose') as HTMLElement;
+    const article = document.querySelector(".prose") as HTMLElement;
     if (!article) return;
 
-    const hrs = Array.from(article.querySelectorAll('hr'));
+    const hrs = Array.from(article.querySelectorAll("hr"));
     this.sections = [];
 
-    // First section (intro)
     if (article.firstElementChild) {
       this.sections.push({
         top: article.getBoundingClientRect().top + window.scrollY,
@@ -58,8 +61,7 @@ export class ArticleNavigation {
 
     hrs.forEach((hr) => {
       let nextEl = hr.nextElementSibling;
-      // Skip multiple HRs
-      while (nextEl && nextEl.tagName === 'HR') {
+      while (nextEl && nextEl.tagName === "HR") {
         nextEl = nextEl.nextElementSibling;
       }
       if (nextEl) {
@@ -70,7 +72,6 @@ export class ArticleNavigation {
       }
     });
 
-    // Add anchors
     this.sections.forEach((section, index) => {
       if (!section.element) return;
       const sectionId = `section-${index + 1}`;
@@ -78,38 +79,37 @@ export class ArticleNavigation {
       this.createAnchor(section.element, sectionId, index + 1);
     });
 
-    if (this.totalSpan) this.totalSpan.textContent = this.sections.length.toString();
+    if (this.totalSpan)
+      this.totalSpan.textContent = this.sections.length.toString();
 
     if (this.sections.length > 1) {
-      this.navContainer?.classList.remove('opacity-0', 'translate-y-4');
-      this.navContainer?.classList.add('opacity-100', 'translate-y-0');
+      this.navContainer?.classList.remove("opacity-0", "translate-y-4");
+      this.navContainer?.classList.add("opacity-100", "translate-y-0");
     }
   }
 
   private createAnchor(element: HTMLElement, id: string, labelIndex: number) {
-    // Only if position is static, we make it relative to position the anchor
-    if (getComputedStyle(element).position === 'static') {
-      element.style.position = 'relative';
+    if (getComputedStyle(element).position === "static") {
+      element.style.position = "relative";
     }
 
-    // Add visual number
-    const numberSpan = document.createElement('span');
-    numberSpan.className = 'font-bold text-5xl text-stone-500 mr-2 select-none';
+    const numberSpan = document.createElement("span");
+    numberSpan.className = "font-bold text-5xl text-stone-500 mr-2 select-none";
     numberSpan.textContent = `${labelIndex}.`;
     element.insertBefore(numberSpan, element.firstChild);
 
-    const anchorBtn = document.createElement('button');
+    const anchorBtn = document.createElement("button");
     anchorBtn.className =
-      'group absolute -ml-8 mt-1 p-1 text-stone-400 hover:text-stone-900 transition-colors hidden sm:inline-flex items-center justify-center cursor-pointer';
-    anchorBtn.setAttribute('aria-label', `Lien vers la section ${labelIndex}`);
-    anchorBtn.title = 'Copier le lien de cette section';
+      "group absolute -ml-8 mt-1 p-1 text-stone-400 hover:text-stone-900 transition-colors hidden sm:inline-flex items-center justify-center cursor-pointer";
+    anchorBtn.setAttribute("aria-label", `Lien vers la section ${labelIndex}`);
+    anchorBtn.title = "Copier le lien de cette section";
     anchorBtn.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
             </svg>
         `;
 
-    anchorBtn.addEventListener('click', (e) => {
+    anchorBtn.addEventListener("click", (e) => {
       e.preventDefault();
       const url = new URL(window.location.href);
       url.hash = `#${id}`;
@@ -130,21 +130,18 @@ export class ArticleNavigation {
   }
 
   private bindEvents() {
-    this.prevBtn?.addEventListener('click', () => this.navigate(-1));
-    this.nextBtn?.addEventListener('click', () => this.navigate(1));
+    this.prevBtn?.addEventListener("click", () => this.navigate(-1));
+    this.nextBtn?.addEventListener("click", () => this.navigate(1));
 
-    this.playBtn?.addEventListener('click', () => {
-      // Check if we are currently playing.
-      // But actually we are decoupled. Let's just ask to toggle if playing, or play section if stopped.
-      // We can listen to state to know.
-      const isPlaying = !this.pauseIcon?.classList.contains('hidden');
+    this.playBtn?.addEventListener("click", () => {
+      const isPlaying = !this.pauseIcon?.classList.contains("hidden");
       if (isPlaying) {
-        window.dispatchEvent(new Event('tts:cmd:toggle'));
+        window.dispatchEvent(new Event("tts:cmd:toggle"));
       } else {
         const currentSectionEl = this.sections[this.activeIndex]?.element;
         if (currentSectionEl) {
           window.dispatchEvent(
-            new CustomEvent('tts:cmd:play-section', {
+            new CustomEvent("tts:cmd:play-section", {
               detail: { element: currentSectionEl },
             }),
           );
@@ -152,60 +149,56 @@ export class ArticleNavigation {
       }
     });
 
-    // Speed button logic (sync with TTS)
-    window.addEventListener('tts:speed-changed', (e: Event) => {
+    window.addEventListener("tts:cmd:nav-next", () => this.navigate(1));
+    window.addEventListener("tts:cmd:nav-prev", () => this.navigate(-1));
+
+    window.addEventListener("tts:speed-changed", (e: Event) => {
       const ce = e as CustomEvent;
       if (this.speedBtn && ce.detail) {
         this.speedBtn.textContent = `${ce.detail.speed}x`;
       }
     });
 
-    // Speed button click -> rotate speed (by manipulating the actual select which is outside this class but we can emit a request?
-    // Or simpler: The TTSController updates the UI Select, so we can't easily change it from here without coupling.
-    // Actually, the Review said "decouple". So we should emit a command.
-    // But for simplicity, let's assume the user clicks the floating button, we can find the select in DOM (bit of coupling) or emit event.
-    this.speedBtn?.addEventListener('click', (e) => {
+    this.speedBtn?.addEventListener("click", (e) => {
       e.stopPropagation();
-      // Find the select (it's in the other component)
-      const select = document.querySelector('.tts-speed') as HTMLSelectElement;
+
+      const select = document.querySelector(".tts-speed") as HTMLSelectElement;
       if (select) {
-        const options = Array.from(select.options).map((o) => parseFloat(o.value));
+        const options = Array.from(select.options).map((o) =>
+          parseFloat(o.value),
+        );
         const current = parseFloat(select.value);
         let nextIdx = options.findIndex((s) => s > current);
         if (nextIdx === -1) nextIdx = 0;
         select.value = options[nextIdx].toString();
-        select.dispatchEvent(new Event('change')); // Triggers TTSController
+        select.dispatchEvent(new Event("change"));
       }
     });
 
-    // Listen for TTS State to update Play/Pause icon
-    window.addEventListener('tts:state-changed', (e: Event) => {
+    window.addEventListener("tts:state-changed", (e: Event) => {
       const ce = e as CustomEvent;
       const state = ce.detail.state;
-      if (state === 'playing') {
-        this.playIcon?.classList.add('hidden');
-        this.pauseIcon?.classList.remove('hidden');
+      if (state === "playing") {
+        this.playIcon?.classList.add("hidden");
+        this.pauseIcon?.classList.remove("hidden");
       } else {
-        this.playIcon?.classList.remove('hidden');
-        this.pauseIcon?.classList.add('hidden');
+        this.playIcon?.classList.remove("hidden");
+        this.pauseIcon?.classList.add("hidden");
       }
     });
 
-    // Keyboard navigation
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener("keydown", (e) => {
       if (e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) return;
       const target = e.target as HTMLElement;
-      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return;
+      if (["INPUT", "SELECT", "TEXTAREA"].includes(target.tagName)) return;
 
-      if (e.key === 'ArrowLeft') {
+      if (e.key === "ArrowLeft") {
         this.navigate(-1);
-        // Also play if playing? Or just navigate. Original code did both.
-        // Let's just navigate.
-      } else if (e.key === 'ArrowRight') {
+      } else if (e.key === "ArrowRight") {
         this.navigate(1);
-      } else if (e.code === 'Space') {
+      } else if (e.code === "Space") {
         e.preventDefault();
-        window.dispatchEvent(new Event('tts:cmd:toggle'));
+        window.dispatchEvent(new Event("tts:cmd:toggle"));
       }
     });
   }
@@ -215,12 +208,11 @@ export class ArticleNavigation {
     if (targetIndex >= 0 && targetIndex < this.sections.length) {
       this.scrollToSection(targetIndex);
 
-      // If playing, skip audio to that section too
-      const isPlaying = !this.pauseIcon?.classList.contains('hidden');
+      const isPlaying = !this.pauseIcon?.classList.contains("hidden");
       if (isPlaying) {
         const sectionEl = this.sections[targetIndex].element;
         window.dispatchEvent(
-          new CustomEvent('tts:cmd:play-section', {
+          new CustomEvent("tts:cmd:play-section", {
             detail: { element: sectionEl },
           }),
         );
@@ -236,7 +228,8 @@ export class ArticleNavigation {
       let newIndex = 0;
       for (let i = 0; i < this.sections.length; i++) {
         const elTop = this.sections[i].element
-          ? this.sections[i].element.getBoundingClientRect().top + window.scrollY
+          ? this.sections[i].element.getBoundingClientRect().top +
+            window.scrollY
           : this.sections[i].top;
 
         if (scrollY >= elTop - offset) {
@@ -246,20 +239,25 @@ export class ArticleNavigation {
         }
       }
 
-      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 50) {
+      if (
+        window.innerHeight + window.scrollY >=
+        document.body.offsetHeight - 50
+      ) {
         newIndex = this.sections.length - 1;
       }
 
       if (newIndex !== this.activeIndex) {
         this.activeIndex = newIndex;
-        if (this.currentSpan) this.currentSpan.textContent = (this.activeIndex + 1).toString();
+        if (this.currentSpan)
+          this.currentSpan.textContent = (this.activeIndex + 1).toString();
 
         if (this.prevBtn) this.prevBtn.disabled = this.activeIndex <= 0;
-        if (this.nextBtn) this.nextBtn.disabled = this.activeIndex >= this.sections.length - 1;
+        if (this.nextBtn)
+          this.nextBtn.disabled = this.activeIndex >= this.sections.length - 1;
       }
     };
 
-    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
   }
 
@@ -273,7 +271,7 @@ export class ArticleNavigation {
 
       window.scrollTo({
         top: offsetPosition,
-        behavior: 'smooth',
+        behavior: "smooth",
       });
     }
   }
