@@ -9,6 +9,7 @@ export class ArticleNavigation {
   private navContainer: HTMLElement | null;
   private prevBtn: HTMLButtonElement | null;
   private nextBtn: HTMLButtonElement | null;
+  private scrollTopBtn: HTMLButtonElement | null;
   private playBtn: HTMLButtonElement | null;
   private currentSpan: HTMLElement | null;
   private totalSpan: HTMLElement | null;
@@ -23,6 +24,9 @@ export class ArticleNavigation {
     ) as HTMLButtonElement;
     this.nextBtn = document.getElementById(
       "next-section-btn",
+    ) as HTMLButtonElement;
+    this.scrollTopBtn = document.getElementById(
+      "scroll-to-top-btn",
     ) as HTMLButtonElement;
     this.playBtn = document.getElementById(
       "play-section-btn",
@@ -132,6 +136,9 @@ export class ArticleNavigation {
   private bindEvents() {
     this.prevBtn?.addEventListener("click", () => this.navigate(-1));
     this.nextBtn?.addEventListener("click", () => this.navigate(1));
+    this.scrollTopBtn?.addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
 
     this.playBtn?.addEventListener("click", () => {
       const isPlaying = !this.pauseIcon?.classList.contains("hidden");

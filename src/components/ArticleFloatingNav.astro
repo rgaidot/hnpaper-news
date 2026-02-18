@@ -2,7 +2,7 @@
   id="article-nav"
   class="fixed bottom-8 right-8 flex flex-col items-end gap-2 opacity-0 transition-opacity duration-300 translate-y-4 pointer-events-none print:hidden"
 >
-  <div class="flex items-center gap-0 pointer-events-auto bg-stone-900 rounded-full px-1 py-1 shadow-lg w-[10rem]">
+  <div class="flex items-center gap-0 pointer-events-auto bg-stone-900 rounded-full px-1 py-1 shadow-lg">
     <button
       id="prev-section-btn"
       class="p-2 text-white hover:bg-stone-700 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
@@ -26,7 +26,7 @@
 
     <div
       id="section-indicator"
-      class="text-white text-sm font-bold text-center font-sans flex-1 border-l border-r border-stone-700 px-1"
+      class="text-white text-sm font-bold text-center font-sans flex-1 border-l border-r border-stone-700 px-1 min-w-[3rem]"
     >
       <span id="current-section">1</span>/<span id="total-sections">80</span>
     </div>
@@ -48,6 +48,30 @@
           stroke-linejoin="round"
           stroke-width="2"
           d="M19 9l-7 7-7-7"
+        />
+      </svg>
+    </button>
+
+    <div class="w-px h-5 bg-stone-700 mx-1"></div>
+
+    <button
+      id="scroll-to-top-btn"
+      class="p-2 text-white hover:bg-stone-700 rounded-full transition-all cursor-pointer"
+      aria-label="Haut de page"
+      title="Retour en haut"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-6 w-6"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M5 10l7-7m0 0l7 7m-7-7v18"
         />
       </svg>
     </button>
