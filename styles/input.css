@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#f9f7f1] text-stone-900 antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-serif;
+  }
+  a {
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+}
+
+@layer components {
+  .tts-word {
+    @apply rounded-[2px] transition-all duration-150 cursor-pointer;
+  }
+  .tts-word:hover {
+    /* Approximate oklch for compatibility or use literal if postCSS supports it */
+    background-color: #fde047; /* Yellow-ish fallback */
+    background-color: oklch(93.8% 0.127 124.321);
+  }
+  .tts-active {
+    background-color: #fde047;
+    background-color: oklch(93.8% 0.127 124.321);
+    border-bottom: 2px solid #ca8a04;
+    border-bottom: 2px solid oklch(76.8% 0.233 130.85);
+    @apply text-stone-900 px-[2px] py-[1px];
+  }
+  
+  .tts-button-style {
+    background-color: #fde047;
+    background-color: oklch(93.8% 0.127 124.321);
+    border-bottom: 2px solid #ca8a04;
+    border-bottom: 2px solid oklch(76.8% 0.233 130.85);
+    @apply text-stone-900 cursor-pointer;
+  }
+  .tts-button-style:hover {
+    background-color: #fef08a;
+    background-color: oklch(88% 0.127 124.321);
+  }
+
+  .tts-stop-button-style {
+    background-color: #ef4444; /* Red fallback */
+    background-color: oklch(70% 0.2 20);
+    border-bottom: 2px solid #991b1b;
+    border-bottom: 2px solid oklch(50% 0.3 20);
+    @apply text-white cursor-pointer;
+  }
+  .tts-stop-button-style:hover {
+    background-color: #f87171;
+    background-color: oklch(60% 0.25 20);
+  }
+}

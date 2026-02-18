@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ config.title }}{% endblock %}</title>
+    <meta name="description" content="{{ config.description }}">
+    <meta name="generator" content="Zola">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="/css/global.css">
+</head>
+<body class="flex flex-col min-h-screen">
+    <header class="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-6 text-center">
+      <div class="border-b-4 border-stone-900 pb-2 mb-2">
+        <h1 class="font-serif text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter text-stone-900 uppercase leading-none">
+          <a href="/" class="hover:text-stone-700 transition-colors">The HNPaper</a>
+        </h1>
+      </div>
+      <div class="border-b border-stone-900 border-t border-stone-900 py-2 flex justify-between items-center font-serif font-bold text-xs sm:text-sm uppercase tracking-widest text-stone-800">
+        <span>{{ now() | date(format="%A %d %B %Y", locale="fr_FR") }}</span>
+        <span><a href="/news" class="hover:underline">Archives</a></span>
+      </div>
+    </header>
+
+    <main class="w-full max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="w-full max-w-6xl mx-auto px-4 sm:px-6 py-8 mt-12 border-t-4 border-stone-900">
+      <div class="text-center font-serif text-sm text-stone-600">
+        <p class="mb-2">
+          &copy; {{ now() | date(format="%Y") }} HNPaper News. Printed in the Cloud :-)
+        </p>
+        <p>
+          Source : <a href="https://hnpaper-labs.gaidot.net" target="_blank" class="text-stone-900 hover:underline font-bold">HNPaper</a>
+          &mdash; By <a href="https://regis.gaidot.net" target="_blank" class="text-stone-900 hover:underline font-bold">Régis Gaidot</a>
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js');
+      }
+    </script>
+    <script src="/js/main.js" defer></script>
+</body>
+</html>

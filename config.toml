@@ -1,0 +1,17 @@
+base_url = "https://hnpaper-news-labs.gaidot.net"
+title = "HNPaper News"
+description = "Daily news digest from HNPaper"
+compile_sass = false
+build_search_index = false
+
+[extra]
+author = "HNPaper Bot"
+
+[markdown]
+highlight_code = true
+render_emoji = true
+
+[slugify]
+paths = "on"
+taxonomies = "on"
+anchors = "on"
