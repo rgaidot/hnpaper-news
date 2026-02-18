@@ -20,21 +20,19 @@ const { title, readingTime } = Astro.props;
     </svg>
   </button>
   <select class="tts-speed p-2 rounded bg-stone-200 hover:bg-stone-300 text-stone-800 transition-colors duration-200 border-none text-sm cursor-pointer outline-none font-medium" aria-label="Vitesse de lecture">
+    <option value="0.50">0.50x</option>
     <option value="0.75">0.75x</option>
     <option value="1" selected>1x</option>
     <option value="1.25">1.25x</option>
     <option value="1.5">1.5x</option>
+    <option value="1.75">1.75x</option>
     <option value="2">2x</option>
     <option value="2.5">2.5x</option>
+    <option value="2.75">2.75x</option>
     <option value="3">3x</option>
     <option value="3.5">3.5x</option>
+    <option value="3.75">3.75x</option>
     <option value="4">4x</option>
-    <option value="4.5">4.5x</option>
-    <option value="5">5x</option>
-    <option value="5.5">5.5x</option>
-    <option value="6">6x</option>
-    <option value="6.5">6.5x</option>
-    <option value="7">7x</option>
   </select>
   {readingTime && (
     <span class="tts-reading-time text-xs font-sans font-bold uppercase tracking-widest text-stone-500" data-base-time={readingTime}>{readingTime} min</span>
