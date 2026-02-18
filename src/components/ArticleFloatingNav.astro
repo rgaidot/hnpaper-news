@@ -2,11 +2,12 @@
   id="article-nav"
   class="fixed bottom-8 right-8 flex flex-col items-end gap-2 opacity-0 transition-opacity duration-300 translate-y-4 pointer-events-none print:hidden"
 >
-  <div class="flex items-center gap-0 pointer-events-auto bg-stone-900 rounded-full px-1 py-1 shadow-lg">
+  <div class="flex items-center gap-0 pointer-events-auto bg-stone-900 rounded-full px-1 py-1 shadow-lg w-full">
     <button
       id="prev-section-btn"
       class="p-2 text-white hover:bg-stone-700 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
       aria-label="Article précédent"
+      title="Article précédent"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -35,6 +36,7 @@
       id="next-section-btn"
       class="p-2 text-white hover:bg-stone-700 rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
       aria-label="Article suivant"
+      title="Article suivant"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -77,7 +79,7 @@
     </button>
   </div>
 
-  <div class="flex items-center gap-0 pointer-events-auto bg-stone-900 rounded-full px-1 py-1 shadow-lg w-[10rem]">
+  <div class="flex items-center gap-0 pointer-events-auto bg-stone-900 rounded-full px-1 py-1 shadow-lg w-full">
     <div class="relative group flex items-center justify-center">
       <button
         class="p-2 text-stone-400 hover:text-white transition-colors cursor-help rounded-full hover:bg-stone-700"
@@ -141,6 +143,7 @@
       id="play-section-btn"
       class="p-2 text-white hover:bg-stone-700 rounded-full transition-all cursor-pointer"
       aria-label="Lire cette section"
+      title="Lire"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

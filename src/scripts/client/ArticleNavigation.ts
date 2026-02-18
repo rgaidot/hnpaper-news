@@ -171,13 +171,11 @@ export class ArticleNavigation {
 
       const select = document.querySelector(".tts-speed") as HTMLSelectElement;
       if (select) {
-        const options = Array.from(select.options).map((o) =>
-          parseFloat(o.value),
-        );
-        const current = parseFloat(select.value);
-        let nextIdx = options.findIndex((s) => s > current);
-        if (nextIdx === -1) nextIdx = 0;
-        select.value = options[nextIdx].toString();
+        let nextIndex = select.selectedIndex + 1;
+        if (nextIndex >= select.options.length) {
+          nextIndex = 0;
+        }
+        select.selectedIndex = nextIndex;
         select.dispatchEvent(new Event("change"));
       }
     });
