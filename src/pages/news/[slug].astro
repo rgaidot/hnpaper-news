@@ -40,8 +40,7 @@ const readingTime = Math.ceil(words / wordsPerMinute);
       <div
         class="flex flex-col items-center space-y-2 text-stone-600 font-sans text-sm uppercase tracking-widest"
       >
-        <span class="text-2xl font-bold">{formattedDate}</span>
-        <span class="italic text-xs">Par {entry.data.author}</span>
+        <span class="text-2xl font-bold font-sans text-stone-600 uppercase tracking-wides">{formattedDate}</span>
       </div>
       <TTSPlayer title={entry.data.title} readingTime={readingTime} />
     </header>
