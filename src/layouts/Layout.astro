@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { pwaInfo } from 'virtual:pwa-info';
+import Search from '../components/Search.astro';
 
 interface Props {
   title: string;
@@ -43,7 +44,10 @@ const { title } = Astro.props;
             })
           }</span
         >
-        <span><a href="/news" class="hover:underline">Archives</a></span>
+        <div class="flex items-center gap-4">
+          <Search />
+          <span><a href="/news" class="hover:underline">Archives</a></span>
+        </div>
       </div>
     </header>
 

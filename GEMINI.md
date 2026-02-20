@@ -77,6 +77,24 @@ The website integrates Text-to-Speech capabilities to allow users to listen to t
 *   **`TTSPlayer.astro`**: UI component for playback controls.
 *   **`TTSController.ts`**: Manages audio playback using the Web Speech API. It communicates with other components via custom window events (e.g., `tts:cmd:toggle`, `tts:state-changed`).
 
+### PWA (Progressive Web App)
+The site is configured as a PWA using `@vite-pwa/astro`.
+*   **Offline Support**: Uses Workbox to cache assets and content for offline reading.
+*   **Installable**: Manifest file allows installation on mobile/desktop.
+*   **Multi-Page Application (MPA) Support**: The `workbox` configuration has been updated with `navigateFallback: null` to correctly handle navigation on a multi-page site, preventing it from incorrectly serving the `index.html` for article pages.
+
+### Global Search
+The website now features a client-side global search powered by **Pagefind** (core API).
+*   **`src/components/Search.astro`**: Custom Astro component providing the search input and dynamic results display, built with Tailwind CSS.
+*   **Functionality**: Users can search articles, with results displayed in a dropdown. Includes a "Load More" feature to paginate results (initially showing 5), and a custom clear button.
+*   **Indexing**: Pagefind indexes static HTML content generated during the build process. The `data-pagefind-body` attribute is used on article content for relevant results. The build script (`bun run build`) automatically copies the generated Pagefind index to the `public/` directory, allowing search to function in development mode.
+*   **Styling**: The search UI is fully customized using Tailwind CSS to match the site's aesthetic. The search input is hidden on mobile devices.
+
+### Text-to-Speech (TTS)
+The website integrates Text-to-Speech capabilities to allow users to listen to the news articles.
+*   **`TTSPlayer.astro`**: UI component for playback controls.
+*   **`TTSController.ts`**: Manages audio playback using the Web Speech API. It communicates with other components via custom window events (e.g., `tts:cmd:toggle`, `tts:state-changed`).
+
 ### Article Navigation
 *   **`ArticleFloatingNav.astro`**: Reusable component that encapsulates the UI for the floating navigation bar.
 *   **`ArticleNavigation.ts`**: Provides advanced navigation features within articles.
