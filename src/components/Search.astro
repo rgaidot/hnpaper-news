@@ -1,0 +1,130 @@
+---
+---
+
+<div id="search" class="relative flex items-center">
+  <input
+    id="pagefind-search"
+    placeholder="Rechercher..."
+    class="border border-stone-900 font-bold text-left px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-stone-900 w-full sm:w-auto hidden sm:block pr-8"
+  />
+  <button
+    id="clear-search-btn"
+    class="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-stone-900 bg-transparent rounded-full hover:bg-stone-200 focus:outline-none focus:ring-2 focus:ring-stone-900 hidden"
+    aria-label="Effacer la recherche"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  </button>
+  <div
+    id="pagefind-search-results"
+    class="absolute top-full right-0 mt-2 w-full sm:w-[400px] max-w-[90vw] bg-white border-2 border-stone-900 shadow-[4px_4px_0px_#1c1917] z-50 max-h-[70vh] overflow-y-auto hidden"
+  ></div>
+</div>
+
+<script is:inline>
+  const searchInput = document.getElementById("pagefind-search");
+  const searchResults = document.getElementById("pagefind-search-results");
+  const clearSearchBtn = document.getElementById("clear-search-btn");
+
+  let pagefind;
+  let currentResults = [];
+  let visibleCount = 5;
+
+  async function loadPagefind() {
+    if (pagefind) return;
+    pagefind = await import("/pagefind/pagefind.js");
+    await pagefind.init();
+  }
+
+  async function renderResults() {
+    if (currentResults.length === 0) {
+       searchResults.innerHTML = '<p class="text-stone-600 italic p-2">Aucun résultat.</p>';
+       return;
+    }
+
+    const slicedResults = currentResults.slice(0, visibleCount);
+    let resultsHtml = '';
+    
+    for (const result of slicedResults) {
+      const data = await result.data();
+      const date = data.meta.title || data.url.split('/').pop().replace(/-/g, ' ');
+      resultsHtml += `
+        <a href="${data.url}" class="block p-2 hover:bg-stone-100 border-b border-stone-200 last:border-b-0 text-left">
+          <h3 class="font-bold text-stone-900 text-base">${date}</h3>
+          <p class="text-sm text-stone-700 normal-case">${data.excerpt}</p>
+        </a>
+      `;
+    }
+
+    if (currentResults.length > visibleCount) {
+      resultsHtml += `
+        <button id="load-more-btn" class="w-full text-center p-2 font-bold text-stone-800 hover:bg-stone-200 text-sm uppercase tracking-wider mt-2 border-t border-stone-900 cursor-pointer">
+          Voir plus de résultats
+        </button>
+      `;
+    }
+
+    searchResults.innerHTML = resultsHtml;
+
+    const loadMoreBtn = document.getElementById("load-more-btn");
+    if (loadMoreBtn) {
+      loadMoreBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        visibleCount += 5;
+        renderResults();
+      });
+    }
+  }
+
+  searchInput.addEventListener("input", async (event) => {
+    const query = event.target.value;
+    if (query.length > 0) {
+      clearSearchBtn.classList.remove("hidden");
+    } else {
+      clearSearchBtn.classList.add("hidden");
+    }
+
+    if (query.length === 0) {
+      searchResults.innerHTML = "";
+      searchResults.classList.add("hidden");
+      return;
+    }
+
+    searchResults.classList.remove("hidden");
+    searchResults.innerHTML = '<p class="text-stone-600 italic p-2">Recherche en cours...</p>';
+
+    await loadPagefind();
+    const search = await pagefind.search(query);
+    
+    currentResults = search.results;
+    visibleCount = 5;
+    
+    if (currentResults.length > 0) {
+      await renderResults();
+    } else {
+      searchResults.innerHTML = '<p class="text-stone-600 italic p-2 normal-case">Aucun résultat pour "' + query + '"</p>';
+    }
+  });
+
+  clearSearchBtn.addEventListener("click", () => {
+    searchInput.value = "";
+    searchResults.innerHTML = "";
+    searchResults.classList.add("hidden");
+    clearSearchBtn.classList.add("hidden");
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!searchResults.contains(event.target) && event.target !== searchInput && event.target !== clearSearchBtn) {
+      searchResults.classList.add("hidden");
+      clearSearchBtn.classList.add("hidden");
+    }
+  });
+
+  searchInput.addEventListener("focus", () => {
+      if (searchInput.value.length > 0) {
+          searchResults.classList.remove("hidden");
+          clearSearchBtn.classList.remove("hidden");
+      }
+  });
+</script>
