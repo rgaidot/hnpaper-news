@@ -1,7 +1,7 @@
 {
-  "name": "hnpaper-v2",
+  "name": "hnpaper-new",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "packageManager": "bun@1.3.3",
   "scripts": {
     "dev": "astro dev",
