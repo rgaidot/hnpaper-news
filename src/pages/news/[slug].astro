@@ -42,7 +42,7 @@ const readingTime = Math.ceil(words / wordsPerMinute);
       >
         <span class="text-2xl font-bold font-sans text-stone-600 uppercase tracking-wides" data-pagefind-meta="title">{formattedDate}</span>
       </div>
-      <TTSPlayer title={entry.data.title} readingTime={readingTime} />
+      <TTSPlayer title={entry.data.title} readingTime={readingTime} slug={entry.slug} />
     </header>
 
     <div

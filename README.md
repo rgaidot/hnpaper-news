@@ -8,6 +8,25 @@ This project is version v2, rebuilt with **Astro** to replace the old Jekyll ver
 
 -   **Daily Summaries**: Automated archives of HNPaper news.
 -   **Audio Player (TTS)**: Integrated text-to-speech functionality to listen to articles.
+    -   **Google Cast Support**: Stream article audio to Google Cast devices (e.g., Google Home, Chromecast).
+        
+        ### How to Use Google Cast
+
+        1.  **Ensure Audio is Generated**: Make sure the MP3 audio files for the articles have been generated (see "Generate Audio Files" below).
+
+        2.  **Access Your Site (Important for Local Development)**:
+            *   **Production (GitHub Pages)**: Simply go to your live site URL (e.g., `https://hnpaper-news-labs.gaidot.net`).
+            *   **Local Development**: Run `bun run dev --host`. Then, open your browser and navigate to your machine's **local IP address** (e.g., `http://192.168.1.XX:4321`), NOT `localhost`. Ensure your computer and Cast device are on the same Wi-Fi network.
+
+        3.  **Initiate Casting**:
+            *   Open the article you want to listen to in Google Chrome.
+            *   Click on Chrome's **"Menu"** (three vertical dots) in the top-right corner.
+            *   Select **"Cast..."**.
+            *   Choose your desired Google Cast device from the list.
+
+        4.  **Playback**: The audio of the article will begin playing on your Google Cast device. Your browser will display a Cast control interface.
+
+    -   Uses a dynamic and engaging female voice (French).
     -   Adjustable playback speed (0.75x to 7x).
     -   Interactive highlighting (karaoke style).
     -   Click on any word to start reading from there.
@@ -28,7 +47,7 @@ This project is version v2, rebuilt with **Astro** to replace the old Jekyll ver
 ```text
 /
 ├── .github/workflows # GitHub Actions for deployment
-├── public/           # Static files (favicon, CNAME, pwa icons)
+├── public/           # Static files (favicon, CNAME, pwa icons, **generated audio files** in `public/audio`)
 ├── src/
 │   ├── components/   # UI Components (TTSPlayer, etc.)
 │   ├── content/      # Content collections
@@ -76,13 +95,19 @@ Prerequisites: Bun installed (https://bun.sh).
 
     The site will be available at `http://localhost:4321`.
 
-3.  **Build for production**
+3.  **Generate Audio Files**
 
+    The project automatically generates `.mp3` audio files for each article, which are used by the TTS player and Google Cast.
+    
     ```bash
-    bun run build
+    bun run scripts/generate-audio.ts
     ```
 
-    The generated files will be in the `dist/` folder.
+    To force regeneration of all audio files (even if they already exist):
+
+    ```bash
+    bun run scripts/generate-audio.ts --force
+    ```
 
 4.  **Preview the production build**
 
@@ -93,5 +118,7 @@ Prerequisites: Bun installed (https://bun.sh).
 ## 📦 Deployment
 
 Deployment is automated via **GitHub Actions**.
-On every push to the `main` branch, the workflow `.github/workflows/deploy.yml` builds the site and deploys it to the GitHub Pages environment.
+
+*   On every push to the `main` branch, the workflow `.github/workflows/deploy.yml` builds the site and deploys it to the GitHub Pages environment.
+*   The workflow `.github/workflows/generate-audio.yml` automatically generates and commits audio files for new or updated articles.
 
