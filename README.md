@@ -7,12 +7,12 @@ This project is version v2, rebuilt with **Astro** to replace the old Jekyll ver
 ## ✨ Features
 
 -   **Daily Summaries**: Automated archives of HNPaper news.
--   **Audio Player (TTS)**: Integrated text-to-speech functionality to listen to articles.
+-   **Audio Player (TTS)**: Integrated text-to-speech functionality to listen to articles. MP3 audio files are automatically generated for each article by the `generate-audio.ts` script, which are then used by the TTS player and for Google Cast.
     -   **Google Cast Support**: Stream article audio to Google Cast devices (e.g., Google Home, Chromecast).
         
         ### How to Use Google Cast
 
-        1.  **Ensure Audio is Generated**: Make sure the MP3 audio files for the articles have been generated (see "Generate Audio Files" below).
+        1.  **Ensure Audio is Generated**: The MP3 audio files for the articles are **automatically generated** by the `generate-audio.ts` script. Ensure this script has run (e.g., as part of the CI/CD pipeline or manually via `bun run scripts/generate-audio.ts`).
 
         2.  **Access Your Site (Important for Local Development)**:
             *   **Production (GitHub Pages)**: Simply go to your live site URL (e.g., `https://hnpaper-news-labs.gaidot.net`).
@@ -34,6 +34,8 @@ This project is version v2, rebuilt with **Astro** to replace the old Jekyll ver
 -   **PWA Support**: Installable as a native app on mobile and desktop devices with offline caching capabilities.
 -   **Share Section**: Click on the link icon next to any paragraph to copy a direct link to that specific section.
 -   **Newspaper Design**: A clean, serif-focused aesthetic inspired by classic print media.
+
+-   **Global Search (Pagefind)**: Integrated client-side search using Pagefind, enabling users to search articles with dynamic results, "Load More" pagination, and custom styling. The search index is automatically built and copied during the build process.
 
 ## 🚀 Technologies
 

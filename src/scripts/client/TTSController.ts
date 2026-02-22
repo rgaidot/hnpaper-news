@@ -12,7 +12,6 @@ export class TTSController {
   private playPauseBtn: HTMLButtonElement | null;
   private stopBtn: HTMLButtonElement | null;
   private speedSelect: HTMLSelectElement | null;
-  private statusEl: HTMLElement | null;
   private readingTimeEl: HTMLElement | null;
 
   private utterance: SpeechSynthesisUtterance | null = null;
@@ -45,7 +44,6 @@ export class TTSController {
     this.playPauseBtn = this.container.querySelector(".play-pause-tts");
     this.stopBtn = this.container.querySelector(".stop-tts");
     this.speedSelect = this.container.querySelector(".tts-speed");
-    this.statusEl = this.container.querySelector(".tts-status");
     this.readingTimeEl = this.container.querySelector(".tts-reading-time");
 
     this.titleText = (this.container.getAttribute("data-title") || "") + ". ";
@@ -170,7 +168,6 @@ export class TTSController {
             this.stop();
             this.loadRemoteMedia();
             this.updateState("playing");
-            if (this.statusEl) this.statusEl.textContent = "Cast connecté";
           } else {
             this.castSession = null;
             this.updateState("stopped");
@@ -618,36 +615,32 @@ export class TTSController {
       new CustomEvent("tts:state-changed", { detail: { state: newState } }),
     );
 
-    if (!this.playPauseBtn || !this.statusEl || !this.stopBtn) return;
+    if (!this.playPauseBtn || !this.stopBtn) return;
 
     if (newState === "playing") {
       this.playPauseBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-label="Pause la lecture" title="Pause la lecture">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             `;
       this.stopBtn.classList.remove("hidden");
-      this.statusEl.textContent = "Lecture en cours...";
     } else if (newState === "paused") {
       this.playPauseBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-label="Reprendre la lecture" title="Reprendre la lecture">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                   <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             `;
       this.stopBtn.classList.remove("hidden");
-      this.statusEl.textContent = "En pause";
     } else if (newState === "stopped") {
       this.playPauseBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-label="Lancer la lecture" title="Lancer la lecture">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                   <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             `;
       this.stopBtn.classList.add("hidden");
-      this.statusEl.textContent = "Prêt à lire";
     } else if (newState === "error") {
-      this.statusEl.textContent = "Erreur TTS";
       this.stopBtn.classList.add("hidden");
     }
   }
