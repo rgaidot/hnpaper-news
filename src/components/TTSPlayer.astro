@@ -15,8 +15,14 @@ const { title, slug, readingTime } = Astro.props;
       window.dispatchEvent(new Event('google-cast-available'));
     }
   };
+
+  (function() {
+    var script = document.createElement('script');
+    script.src = 'https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1';
+    script.async = true;
+    document.body.appendChild(script);
+  })();
 </script>
-<script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1" crossorigin="anonymous"></script>
 
 <div class="tts-player-container flex items-center justify-center space-x-2 mt-4" data-title={title} data-slug={slug}>
   <button class="play-pause-tts p-2 rounded-full tts-button-style transition-colors duration-200">
