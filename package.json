@@ -24,6 +24,9 @@
     "@biomejs/biome": "2.3.13",
     "@tailwindcss/typography": "^0.5.19",
     "@vite-pwa/astro": "^1.2.0",
+    "front-matter": "^4.0.2",
+    "glob": "^13.0.6",
+    "node-edge-tts": "^1.2.10",
     "pagefind": "^1.4.0",
     "workbox-window": "^7.4.0"
   }

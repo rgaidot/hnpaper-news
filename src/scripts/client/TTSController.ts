@@ -26,9 +26,15 @@ export class TTSController {
   private sentences: { text: string; start: number }[] = [];
   private fullText: string = "";
   private titleText: string = "";
+  private slug: string = "";
 
   private currentSentenceIndex: number = 0;
   private currentCharIndex: number = 0;
+
+  private castContext: any = null;
+  private castSession: any = null;
+  private remotePlayer: any = null;
+  private remotePlayerController: any = null;
 
   constructor(options: TTSOptions) {
     this.container = options.container;
@@ -42,14 +48,15 @@ export class TTSController {
     this.statusEl = this.container.querySelector(".tts-status");
     this.readingTimeEl = this.container.querySelector(".tts-reading-time");
 
-    this.titleText = (this.container.getAttribute('data-title') || '') + '. ';
+    this.titleText = (this.container.getAttribute("data-title") || "") + ". ";
+    this.slug = this.container.getAttribute("data-slug") || "";
 
-    this.silentAudio = document.createElement('audio');
+    this.silentAudio = document.createElement("audio");
     this.silentAudio.src = this.SILENT_AUDIO_URL;
     this.silentAudio.volume = 0.001;
-    this.silentAudio.setAttribute('playsinline', '');
+    this.silentAudio.setAttribute("playsinline", "");
     document.body.appendChild(this.silentAudio);
-    
+
     this.init();
   }
 
@@ -108,6 +115,11 @@ export class TTSController {
     if (!this.playPauseBtn || !this.stopBtn || !this.speedSelect) return;
 
     this.bindEvents();
+    this.initializeCast();
+
+    window.addEventListener("google-cast-available", () => {
+      this.initializeCast();
+    });
 
     window.addEventListener("tts:cmd:play", () => this.play());
     window.addEventListener("tts:cmd:pause", () => this.pause());
@@ -132,6 +144,95 @@ export class TTSController {
     this.prepareContent();
   }
 
+  private initializeCast() {
+    const cast = (window as any).cast;
+    const chrome = (window as any).chrome;
+
+    if (!cast || !cast.framework || this.castContext) return;
+
+    try {
+      this.castContext = cast.framework.CastContext.getInstance();
+      this.castContext.setOptions({
+        receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+        autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
+      });
+
+      this.remotePlayer = new cast.framework.RemotePlayer();
+      this.remotePlayerController = new cast.framework.RemotePlayerController(
+        this.remotePlayer,
+      );
+
+      this.remotePlayerController.addEventListener(
+        cast.framework.RemotePlayerEventType.IS_CONNECTED_CHANGED,
+        () => {
+          if (this.remotePlayer.isConnected) {
+            this.castSession = this.castContext.getCurrentSession();
+            this.stop();
+            this.loadRemoteMedia();
+            this.updateState("playing");
+            if (this.statusEl) this.statusEl.textContent = "Cast connecté";
+          } else {
+            this.castSession = null;
+            this.updateState("stopped");
+          }
+        },
+      );
+
+      this.remotePlayerController.addEventListener(
+        cast.framework.RemotePlayerEventType.PLAYER_STATE_CHANGED,
+        () => {
+          const playerState = this.remotePlayer.playerState;
+          if (playerState === chrome.cast.media.PlayerState.PLAYING) {
+            this.updateState("playing");
+          } else if (playerState === chrome.cast.media.PlayerState.PAUSED) {
+            this.updateState("paused");
+          } else if (playerState === chrome.cast.media.PlayerState.IDLE) {
+            this.updateState("stopped");
+          }
+        },
+      );
+    } catch (e) {
+      console.error("Cast init error", e);
+    }
+  }
+
+  private loadRemoteMedia() {
+    if (!this.castSession || !this.slug) {
+      console.warn("loadRemoteMedia: Missing session or slug", {
+        session: !!this.castSession,
+        slug: this.slug,
+      });
+      return;
+    }
+
+    const chrome = (window as any).chrome;
+    const audioUrl = `${window.location.origin}/audio/${this.slug}.mp3`;
+
+    console.log(`[TTS] Tentative de Cast de l'URL : ${audioUrl}`);
+
+    if (audioUrl.includes("localhost") || audioUrl.includes("127.0.0.1")) {
+      console.warn(
+        "[TTS] ATTENTION : Google Cast ne peut pas lire de contenu depuis 'localhost'. Veuillez accéder à ce site via votre adresse IP locale (ex: http://192.168.x.x:4321).",
+      );
+    }
+
+    const mediaInfo = new chrome.cast.media.MediaInfo(audioUrl, "audio/mp3");
+
+    mediaInfo.metadata = new chrome.cast.media.MusicTrackMediaMetadata();
+    mediaInfo.metadata.title = this.titleText.replace(/\.\s*$/, "");
+    mediaInfo.metadata.artist = "HNPaper News";
+    mediaInfo.metadata.images = [
+      new chrome.cast.Image(`${window.location.origin}/pwa-512x512.png`),
+    ];
+
+    const request = new chrome.cast.media.LoadRequest(mediaInfo);
+    this.castSession.loadMedia(request).then(
+      () => console.log("[TTS] Média distant chargé avec succès"),
+      (errorCode: any) =>
+        console.error("[TTS] Erreur chargement média distant:", errorCode),
+    );
+  }
+
   private bindEvents() {
     this.playPauseBtn?.addEventListener("click", () => this.toggle());
     this.stopBtn?.addEventListener("click", () => this.stop());
@@ -152,6 +253,22 @@ export class TTSController {
   }
 
   public play() {
+    if (
+      this.castSession &&
+      this.remotePlayer &&
+      this.remotePlayer.isConnected
+    ) {
+      if (
+        this.remotePlayer.playerState ===
+        (window as any).chrome.cast.media.PlayerState.IDLE
+      ) {
+        this.loadRemoteMedia();
+      } else {
+        this.remotePlayerController.playOrPause();
+      }
+      return;
+    }
+
     if (!window.speechSynthesis) {
       this.updateState("error");
       return;
@@ -163,40 +280,61 @@ export class TTSController {
 
     if (this.sentences.length === 0) return;
 
-    this.updateState('playing');
+    this.updateState("playing");
     this.requestWakeLock();
     this.setupMediaSession();
-    
-    // Start silent audio to keep session alive
+
     if (this.silentAudio) {
       this.silentAudio.currentTime = 0;
-      this.silentAudio?.play().catch(e => console.warn('Silent audio play failed', e));
+      this.silentAudio
+        ?.play()
+        .catch((e) => console.warn("Silent audio play failed", e));
     }
 
     this.speakSentence();
   }
 
   public pause() {
-        if (this.state === 'playing') {
-          this.updateState('paused');
-          this.releaseWakeLock();
-          
-          if (this.silentAudio) {
-            this.silentAudio.pause();
-            this.silentAudio.currentTime = 0; // Reset silent audio
-          }
-    
-          window.speechSynthesis.cancel();
-        }
-      }
-  public resume() {
-    if (this.state === 'paused') {
-      this.updateState('playing');
-      this.requestWakeLock();
-      
+    if (
+      this.castSession &&
+      this.remotePlayer &&
+      this.remotePlayer.isConnected
+    ) {
+      this.remotePlayerController.playOrPause();
+      return;
+    }
+
+    if (this.state === "playing") {
+      this.updateState("paused");
+      this.releaseWakeLock();
+
       if (this.silentAudio) {
-        this.silentAudio.currentTime = 0; // Reset silent audio
-        this.silentAudio?.play().catch(e => console.warn('Silent audio resume failed', e));
+        this.silentAudio.pause();
+        this.silentAudio.currentTime = 0;
+      }
+
+      window.speechSynthesis.cancel();
+    }
+  }
+  public resume() {
+    if (
+      this.castSession &&
+      this.remotePlayer &&
+      this.remotePlayer.isConnected
+    ) {
+      this.remotePlayerController.playOrPause();
+      return;
+    }
+
+    if (this.state === "paused") {
+      this.updateState("playing");
+      this.requestWakeLock();
+
+      if (this.silentAudio) {
+        this.silentAudio.currentTime = 0;
+        this.silentAudio
+          ?.play()
+          .catch((e) => console.warn("Silent audio resume failed", e));
       }
 
       this.speakSentence();
@@ -204,6 +342,16 @@ export class TTSController {
   }
 
   public stop() {
+    if (
+      this.castSession &&
+      this.remotePlayer &&
+      this.remotePlayer.isConnected
+    ) {
+      this.remotePlayerController.stop();
+
+      return;
+    }
+
     this.updateState("stopped");
     this.releaseWakeLock();
 
