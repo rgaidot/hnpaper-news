@@ -3,23 +3,32 @@ interface Props {
   title: string;
   readingTime?: number;
 }
-
 const { title, readingTime } = Astro.props;
+const workerUrl = import.meta.env.PUBLIC_TTS_WORKER_URL ?? "";
 ---
 
-<div class="tts-player-container flex items-center justify-center space-x-2 mt-4" data-title={title}>
+<div
+  class="tts-player-container flex items-center justify-center space-x-2 mt-4"
+  data-title={title}
+  data-worker={workerUrl}
+>
   <button class="play-pause-tts p-2 rounded-full tts-button-style transition-colors duration-200">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
       <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
       <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
   </button>
+
   <button class="stop-tts p-2 rounded-full tts-stop-button-style transition-colors duration-200 hidden">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
       <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
     </svg>
   </button>
-  <select class="tts-speed p-2 rounded bg-stone-200 hover:bg-stone-300 text-stone-800 transition-colors duration-200 border-none text-sm cursor-pointer outline-none font-medium" aria-label="Vitesse de lecture">
+
+  <select
+    class="tts-speed p-2 rounded bg-stone-200 hover:bg-stone-300 text-stone-800 transition-colors duration-200 border-none text-sm cursor-pointer outline-none font-medium"
+    aria-label="Vitesse de lecture"
+  >
     <option value="0.50">0.50x</option>
     <option value="0.75">0.75x</option>
     <option value="1" selected>1x</option>
@@ -34,32 +43,151 @@ const { title, readingTime } = Astro.props;
     <option value="3.75">3.75x</option>
     <option value="4">4x</option>
   </select>
+
   {readingTime && (
-    <span class="tts-reading-time text-xs font-sans font-bold uppercase tracking-widest text-stone-500" data-base-time={readingTime}>{readingTime} min</span>
+    <span
+      class="tts-reading-time text-xs font-sans font-bold uppercase tracking-widest text-stone-500"
+      data-base-time={readingTime}
+    >
+      {readingTime} min
+    </span>
   )}
+
   <span class="tts-status text-sm text-stone-600 italic">Prêt à lire</span>
+
+  <!-- Bouton Cast — affiché uniquement dans Chrome via JS -->
+  <button
+    class="cast-btn hidden p-2 rounded-full transition-colors duration-200 text-stone-500 hover:text-stone-800 hover:bg-stone-200"
+    title="Lire sur Google Home"
+    aria-label="Lire sur Google Home"
+  >
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M1 18v3h3c0-1.66-1.34-3-3-3zm0-4v2c2.76 0 5 2.24 5 5h2c0-3.87-3.13-7-7-7zm18-7H5c-1.1 0-2 .9-2 2v3h2v-3h14v12h-5v2h5c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm-18 3v2c4.97 0 9 4.03 9 9h2c0-6.08-4.92-11-11-11z"/>
+    </svg>
+  </button>
+
+  <!-- Nom de l'appareil Cast connecté -->
+  <span class="cast-device hidden text-xs font-sans text-stone-500 truncate max-w-[90px]"></span>
 </div>
 
 <script>
   import { TTSController } from '../scripts/client/TTSController';
+  import { CastManager } from '../scripts/cast';
+  import type { CastState } from '../scripts/cast';
 
   function init() {
     document.querySelectorAll('.tts-player-container').forEach(container => {
-        // Prevent double init
-        if (container.hasAttribute('data-tts-initialized')) return;
-        
-        container.setAttribute('data-tts-initialized', 'true');
-        
-        new TTSController({
-            container: container as HTMLElement,
-            articleContentSelector: '.prose'
-        });
+      if (container.hasAttribute('data-tts-initialized')) return;
+      container.setAttribute('data-tts-initialized', 'true');
+
+      const el = container as HTMLElement;
+
+      // ── TTSController existant (inchangé) ────────────────────────────
+      new TTSController({
+        container: el,
+        articleContentSelector: '.prose',
+      });
+
+      // ── Cast ─────────────────────────────────────────────────────────
+      const workerUrl  = el.dataset.worker ?? '';
+      const castBtn    = el.querySelector<HTMLButtonElement>('.cast-btn');
+      const castDevice = el.querySelector<HTMLElement>('.cast-device');
+      const speedSelect = el.querySelector<HTMLSelectElement>('.tts-speed');
+      const ttsStatus  = el.querySelector<HTMLElement>('.tts-status');
+
+      // Pas de Worker configuré → pas de bouton Cast
+      if (!castBtn || !workerUrl) return;
+
+      const cast = new CastManager(workerUrl);
+
+      cast.init((state: CastState, deviceName?: string) => {
+        switch (state) {
+          case 'unavailable':
+            castBtn.classList.add('hidden');
+            break;
+
+          case 'idle':
+            castBtn.classList.remove('hidden');
+            castBtn.classList.remove('text-green-600', 'text-blue-500', 'text-orange-400', 'animate-pulse');
+            castBtn.classList.add('text-stone-500');
+            castBtn.title = 'Lire sur Google Home';
+            castDevice?.classList.add('hidden');
+            break;
+
+          case 'loading':
+            castBtn.classList.add('animate-pulse', 'text-orange-400');
+            castBtn.classList.remove('text-stone-500');
+            if (ttsStatus) ttsStatus.textContent = 'Génération audio…';
+            break;
+
+          case 'connecting':
+            castBtn.classList.remove('text-orange-400');
+            castBtn.classList.add('text-blue-500', 'animate-pulse');
+            if (ttsStatus) ttsStatus.textContent = 'Connexion…';
+            break;
+
+          case 'playing':
+            castBtn.classList.remove('animate-pulse', 'text-blue-500');
+            castBtn.classList.add('text-green-600');
+            castBtn.title = `▶ ${deviceName ?? 'Google Home'} — cliquer pour pause`;
+            if (castDevice) {
+              castDevice.textContent = deviceName ?? 'Google Home';
+              castDevice.classList.remove('hidden');
+            }
+            if (ttsStatus) ttsStatus.textContent = `▶ ${deviceName ?? 'Google Home'}`;
+            break;
+
+          case 'paused':
+            castBtn.classList.remove('text-green-600');
+            castBtn.classList.add('text-blue-500');
+            castBtn.title = 'En pause — cliquer pour reprendre';
+            if (ttsStatus) ttsStatus.textContent = `⏸ ${deviceName ?? 'Google Home'}`;
+            break;
+
+          case 'error':
+            castBtn.classList.remove('animate-pulse', 'text-orange-400', 'text-blue-500');
+            castBtn.classList.add('text-red-500');
+            setTimeout(() => {
+              castBtn.classList.remove('text-red-500');
+              castBtn.classList.add('text-stone-500');
+            }, 3000);
+            if (ttsStatus) ttsStatus.textContent = 'Erreur Cast';
+            break;
+        }
+      });
+
+      castBtn.addEventListener('click', async () => {
+        const state = cast.getState();
+
+        if (state === 'loading' || state === 'connecting') return;
+        if (state === 'playing' || state === 'paused') {
+          cast.togglePause();
+          return;
+        }
+
+        try {
+          const article = document.querySelector<HTMLElement>('.prose');
+          const text = article?.innerText?.trim() ?? '';
+          if (!text) return;
+
+          const speed = parseFloat(speedSelect?.value ?? '1');
+          const rate  = speedToEdgeRate(speed);
+
+          await cast.speak(text, rate);
+        } catch (err) {
+          console.error('[Cast]', err);
+        }
+      });
     });
   }
 
-  // Support View Transitions
+  /** Convertit la vitesse du select (0.5–4) en format Edge TTS (+/-%) */
+  function speedToEdgeRate(speed: number): string {
+    const pct = Math.round((speed - 1) * 100);
+    return pct >= 0 ? `+${pct}%` : `${pct}%`;
+  }
+
   document.addEventListener('astro:page-load', init);
-  // Fallback for first load if not using VT or if script runs late
   if (document.readyState !== 'loading') {
     init();
   } else {

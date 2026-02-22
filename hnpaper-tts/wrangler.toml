@@ -1,0 +1,11 @@
+name = "hnpaper-tts"
+main = "tts-worker.ts"
+compatibility_date = "2024-09-23"
+
+compatibility_flags = ["nodejs_compat"]
+
+# KV Namespace pour stocker les textes à lire
+# Lancez `bunx wrangler kv:namespace create "TTS_CACHE"` pour obtenir l'ID
+[[kv_namespaces]]
+binding = "TTS_CACHE"
+id = "5b87412d8bc340b0811a34517431c544"

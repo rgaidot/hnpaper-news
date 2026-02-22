@@ -1,0 +1,17 @@
+{
+  "name": "hnpaper-tts",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260228.0",
+    "@types/bun": "latest",
+    "wrangler": "^4.67.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "msedge-tts": "^2.0.4"
+  }
+}
