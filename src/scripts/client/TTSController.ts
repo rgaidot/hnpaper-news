@@ -198,25 +198,14 @@ export class TTSController {
 
   private loadRemoteMedia() {
     if (!this.castSession || !this.slug) {
-      console.warn("loadRemoteMedia: Missing session or slug", {
-        session: !!this.castSession,
-        slug: this.slug,
-      });
       return;
     }
 
     const chrome = (window as any).chrome;
     const audioUrl = `${window.location.origin}/audio/${this.slug}.mp3`;
 
-    console.log(`[TTS] Tentative de Cast de l'URL : ${audioUrl}`);
-
-    if (audioUrl.includes("localhost") || audioUrl.includes("127.0.0.1")) {
-      console.warn(
-        "[TTS] ATTENTION : Google Cast ne peut pas lire de contenu depuis 'localhost'. Veuillez accéder à ce site via votre adresse IP locale (ex: http://192.168.x.x:4321).",
-      );
-    }
-
-    const mediaInfo = new chrome.cast.media.MediaInfo(audioUrl, "audio/mp3");
+    const mediaInfo = new chrome.cast.media.MediaInfo(audioUrl, "audio/mpeg");
+    mediaInfo.streamType = chrome.cast.media.StreamType.BUFFERED;
 
     mediaInfo.metadata = new chrome.cast.media.MusicTrackMediaMetadata();
     mediaInfo.metadata.title = this.titleText.replace(/\.\s*$/, "");
@@ -226,10 +215,15 @@ export class TTSController {
     ];
 
     const request = new chrome.cast.media.LoadRequest(mediaInfo);
+    request.activeTrackIds = null; // Explicitly no text tracks
+
+    console.log("[TTS DEBUG] MediaInfo sent to Cast:", mediaInfo);
+    console.log("[TTS DEBUG] LoadRequest sent to Cast:", request);
+
     this.castSession.loadMedia(request).then(
-      () => console.log("[TTS] Média distant chargé avec succès"),
+      () => {},
       (errorCode: any) =>
-        console.error("[TTS] Erreur chargement média distant:", errorCode),
+        console.error("[TTS] Error loading remote media:", errorCode),
     );
   }
 
