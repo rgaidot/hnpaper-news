@@ -1,8 +1,8 @@
 import fm from "front-matter";
 import { glob } from "glob";
 import { EdgeTTS } from "node-edge-tts";
-import fs from "node:fs";
-import path from "node:path";
+import fs from "bun:fs";
+import path from "bun:path";
 
 const NEWS_DIR = "src/content/news";
 const AUDIO_DIR = "public/audio";
@@ -24,12 +24,12 @@ function cleanMarkdown(markdown: string): string {
   text = text.replace(/(https?:\/\/[^\s]+)/g, "");
   text = text.replace(/<[^>]+>/g, "");
   text = text.replace(/^[ \t]*[-*+]\s*(Discussion HN|Article source).*$/gm, "");
-  text = text.replace(/^#+\s+/gm, ""); // Titres
-  text = text.replace(/^[-*+]\s+/gm, ""); // Listes génériques
-  text = text.replace(/\*\*([^*]+)\*\*/g, "$1"); // Gras
-  text = text.replace(/\*([^*]+)\*/g, "$1"); // Italique
-  text = text.replace(/__([^_]+)__/g, "$1"); // Gras souligné
-  text = text.replace(/_([^_]+)_/g, "$1"); // Italique souligné
+  text = text.replace(/^#+\s+/gm, "");
+  text = text.replace(/^[-*+]\s+/gm, "");
+  text = text.replace(/\*\*([^*]+)\*\*/g, "$1");
+  text = text.replace(/\*([^*]+)\*/g, "$1");
+  text = text.replace(/__([^_]+)__/g, "$1");
+  text = text.replace(/_([^_]+)_/g, "$1");
   text = text.replace(/\n{3,}/g, "\n\n");
 
   return text.trim();
@@ -45,7 +45,7 @@ function chunkText(text: string, maxLength = 2000): string[] {
   const sentences = text.match(sentenceRegex) || [text];
 
   for (const sentence of sentences) {
-    if (!sentence.trim()) continue; // Ignorer les segments vides
+    if (!sentence.trim()) continue;
 
     if ((currentChunk + sentence).length > maxLength) {
       if (currentChunk.length > 0) {
