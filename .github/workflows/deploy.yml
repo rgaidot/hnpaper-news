@@ -4,6 +4,11 @@ on:
   # Trigger the workflow every time you push to the `main` branch
   push:
     branches: [main]
+  # Trigger after audio generation to deploy the new files
+  workflow_run:
+    workflows: ["Generate Audio"]
+    types:
+      - completed
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -22,6 +27,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
