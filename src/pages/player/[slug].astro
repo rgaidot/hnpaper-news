@@ -214,6 +214,7 @@ const formattedDate = format(entry.data.date, 'EEEE d MMMM yyyy à HH:mm', {
     
     const chrome = window.chrome;
     const audioUrl = `${window.location.origin}/audio/${slug}.mp3`;
+    const vttUrl = `${window.location.origin}/audio/${slug}.vtt`;
     
     const mediaInfo = new chrome.cast.media.MediaInfo(audioUrl, 'audio/mpeg');
     mediaInfo.streamType = chrome.cast.media.StreamType.BUFFERED;
@@ -224,8 +225,19 @@ const formattedDate = format(entry.data.date, 'EEEE d MMMM yyyy à HH:mm', {
     mediaInfo.metadata.images = [
       new chrome.cast.Image(`${window.location.origin}/pwa-512x512.png`)
     ];
+
+    const track = new chrome.cast.media.Track(1, chrome.cast.media.TrackType.TEXT);
+    track.trackContentId = vttUrl;
+    track.trackContentType = 'text/vtt';
+    track.subtype = chrome.cast.media.TextTrackType.SUBTITLES;
+    track.name = 'Français';
+    track.language = 'fr-FR';
+    track.customData = null;
+
+    mediaInfo.tracks = [track];
     
     const request = new chrome.cast.media.LoadRequest(mediaInfo);
+    request.activeTrackIds = [1];
     
     castSession.loadMedia(request).then(
       function() { console.log('Load succeed'); },
