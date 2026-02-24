@@ -219,6 +219,7 @@ export class TTSController {
 
     const chrome = (window as any).chrome;
     const audioUrl = `${window.location.origin}/audio/${this.slug}.mp3`;
+    const vttUrl = `${window.location.origin}/audio/${this.slug}.vtt`;
 
     const mediaInfo = new chrome.cast.media.MediaInfo(audioUrl, "audio/mpeg");
     mediaInfo.streamType = chrome.cast.media.StreamType.BUFFERED;
@@ -230,11 +231,21 @@ export class TTSController {
       new chrome.cast.Image(`${window.location.origin}/pwa-512x512.png`),
     ];
 
-    const request = new chrome.cast.media.LoadRequest(mediaInfo);
-    request.activeTrackIds = null; // Explicitly no text tracks
+    const track = new chrome.cast.media.Track(
+      1,
+      chrome.cast.media.TrackType.TEXT,
+    );
+    track.trackContentId = vttUrl;
+    track.trackContentType = "text/vtt";
+    track.subtype = chrome.cast.media.TextTrackType.SUBTITLES;
+    track.name = "Français";
+    track.language = "fr-FR";
+    track.customData = null;
 
-    console.log("[TTS DEBUG] MediaInfo sent to Cast:", mediaInfo);
-    console.log("[TTS DEBUG] LoadRequest sent to Cast:", request);
+    mediaInfo.tracks = [track];
+
+    const request = new chrome.cast.media.LoadRequest(mediaInfo);
+    request.activeTrackIds = [1];
 
     this.castSession.loadMedia(request).then(
       () => {},
