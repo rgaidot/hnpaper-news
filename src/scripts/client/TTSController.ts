@@ -11,10 +11,12 @@ export class TTSController {
   private articleContent: HTMLElement | null;
   private playPauseBtn: HTMLButtonElement | null;
   private stopBtn: HTMLButtonElement | null;
+  private castBtn: HTMLButtonElement | null;
   private speedSelect: HTMLSelectElement | null;
   private readingTimeEl: HTMLElement | null;
 
   private utterance: SpeechSynthesisUtterance | null = null;
+
   private state: TTSState = "stopped";
   private wakeLock: any = null;
   private silentAudio: HTMLAudioElement | null = null;
@@ -43,6 +45,7 @@ export class TTSController {
 
     this.playPauseBtn = this.container.querySelector(".play-pause-tts");
     this.stopBtn = this.container.querySelector(".stop-tts");
+    this.castBtn = this.container.querySelector(".cast-tts");
     this.speedSelect = this.container.querySelector(".tts-speed");
     this.readingTimeEl = this.container.querySelector(".tts-reading-time");
 
@@ -155,6 +158,20 @@ export class TTSController {
         autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
       });
 
+      if (this.castBtn) {
+        this.castBtn.classList.remove("hidden");
+        this.castBtn.addEventListener("click", () => {
+          this.castContext.requestSession().then(
+            (session: any) => {
+              console.log("Session requested success", session);
+            },
+            (err: any) => {
+              console.error("Session request failed", err);
+            },
+          );
+        });
+      }
+
       this.remotePlayer = new cast.framework.RemotePlayer();
       this.remotePlayerController = new cast.framework.RemotePlayerController(
         this.remotePlayer,
@@ -168,9 +185,11 @@ export class TTSController {
             this.stop();
             this.loadRemoteMedia();
             this.updateState("playing");
+            this.castBtn?.classList.add("text-blue-500");
           } else {
             this.castSession = null;
             this.updateState("stopped");
+            this.castBtn?.classList.remove("text-blue-500");
           }
         },
       );

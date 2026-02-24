@@ -33,17 +33,22 @@ if (latestPost) {
     latestPost ? (
       <>
         <article class="mx-auto max-w-3xl">
-          <header class="mb-10 text-center border-b-4 border-double border-stone-300 pb-8">
-            <div class="flex flex-col items-center space-y-2 text-stone-600 font-sans text-sm uppercase tracking-widest">
-              <span class="text-2xl font-bold font-sans text-stone-600 uppercase tracking-wides">{formattedDate}</span>
+          <header
+            class="mb-10 text-center"
+          >
+            <div
+              class="flex flex-col items-center space-y-2 text-stone-600 font-sans text-sm uppercase tracking-widest pb-8"
+            >
+              <span class="text-2xl font-bold font-sans text-stone-600 uppercase tracking-wides" data-pagefind-meta="title">{formattedDate}</span>
             </div>
-            <TTSPlayer
-              title={latestPost.data.title}
-              readingTime={readingTime}
-              slug={latestPost.slug}
-            />
+            <div class="border-t-4 border-b-4 border-double border-stone-300">
+              <TTSPlayer
+                title={latestPost.data.title}
+                readingTime={readingTime}
+                slug={latestPost.slug}
+              />
+            </div>
           </header>
-
           <div class="prose prose-stone prose-lg max-w-none mx-auto text-justify prose-headings:font-serif prose-headings:font-bold prose-headings:text-stone-900 prose-p:font-serif prose-p:text-stone-800 prose-a:text-stone-900 prose-a:underline prose-a:decoration-1 hover:prose-a:decoration-2 prose-a:font-normal prose-strong:text-base prose-blockquote:border-l-2 prose-blockquote:border-stone-900 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-stone-700 prose-img:border prose-img:border-stone-900 prose-img:p-1">
             <Content />
           </div>
