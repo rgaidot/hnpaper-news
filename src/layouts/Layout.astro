@@ -18,6 +18,20 @@ const { title } = Astro.props;
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
     {pwaInfo && <Fragment set:html={pwaInfo.webManifest.linkTag} />}
+    <script is:inline>
+      window['__onGCastApiAvailable'] = function(isAvailable) {
+        if (isAvailable) {
+          window.castAvailable = true;
+          window.dispatchEvent(new Event('google-cast-available'));
+        }
+      };
+      (function() {
+        var script = document.createElement('script');
+        script.src = 'https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1';
+        script.async = true;
+        document.body.appendChild(script);
+      })();
+    </script>
     <title>{title}</title>
   </head>
   <body class="flex flex-col min-h-screen">

@@ -98,7 +98,7 @@ export class ArticleNavigation {
     }
 
     const numberSpan = document.createElement("span");
-    numberSpan.className = "font-bold text-5xl text-stone-500 mr-2 select-none";
+    numberSpan.className = "font-bold text-5xl text-stone-500 mr-2 select-none tts-ignore";
     numberSpan.textContent = `${labelIndex}.`;
     element.insertBefore(numberSpan, element.firstChild);
 

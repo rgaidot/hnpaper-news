@@ -8,22 +8,6 @@ interface Props {
 const { title, slug, readingTime } = Astro.props;
 ---
 
-<script is:inline>
-  window['__onGCastApiAvailable'] = function(isAvailable) {
-    if (isAvailable) {
-      window.castAvailable = true;
-      window.dispatchEvent(new Event('google-cast-available'));
-    }
-  };
-
-  (function() {
-    var script = document.createElement('script');
-    script.src = 'https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1';
-    script.async = true;
-    document.body.appendChild(script);
-  })();
-</script>
-
 <div class="tts-player-container flex flex-wrap items-center justify-between gap-4 w-full px-2 py-2" data-title={title} data-slug={slug}>
   
   <div class="flex items-center space-x-2">
@@ -51,12 +35,6 @@ const { title, slug, readingTime } = Astro.props;
         <option value="1.5">1.5x</option>
         <option value="1.75">1.75x</option>
         <option value="2">2x</option>
-        <option value="2.5">2.5x</option>
-        <option value="2.75">2.75x</option>
-        <option value="3">3x</option>
-        <option value="3.5">3.5x</option>
-        <option value="3.75">3.75x</option>
-        <option value="4">4x</option>
       </select>
     </div>
   </div>
@@ -81,7 +59,6 @@ const { title, slug, readingTime } = Astro.props;
 
   function init() {
     document.querySelectorAll('.tts-player-container').forEach(container => {
-        // Prevent double init
         if (container.hasAttribute('data-tts-initialized')) return;
         
         container.setAttribute('data-tts-initialized', 'true');
@@ -93,10 +70,9 @@ const { title, slug, readingTime } = Astro.props;
     });
   }
 
-  // Support View Transitions
   document.addEventListener('astro:page-load', init);
-  // Fallback for first load if not using VT or if script runs late
-  if (document.readyState !== 'loading') {
+  
+  if (document.readyState === 'complete') {
     init();
   } else {
     document.addEventListener('DOMContentLoaded', init);
