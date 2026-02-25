@@ -3,8 +3,11 @@ import { getCollection } from "astro:content";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import TTSPlayer from "../components/TTSPlayer.astro";
+import AudioPlayer from "../components/AudioPlayer.astro";
 import Layout from "../layouts/Layout.astro";
 import ArticleFloatingNav from "../components/ArticleFloatingNav.astro";
+import fs from 'node:fs';
+import path from 'node:path';
 
 const allNews = await getCollection("news");
 const sortedNews = allNews.sort(
@@ -12,7 +15,7 @@ const sortedNews = allNews.sort(
 );
 const latestPost = sortedNews[0];
 
-let Content, formattedDate, readingTime;
+let Content, formattedDate, readingTime, audioFileExists;
 
 if (latestPost) {
   const rendered = await latestPost.render();
@@ -25,6 +28,8 @@ if (latestPost) {
   const wordsPerMinute = 200;
   const words = latestPost.body.trim().split(/\s+/).length;
   readingTime = Math.ceil(words / wordsPerMinute);
+
+  audioFileExists = fs.existsSync(path.join(process.cwd(), 'public', 'audio', `${latestPost.slug}.mp3`));
 }
 ---
 
@@ -61,4 +66,5 @@ if (latestPost) {
     )
   }
   {latestPost && <ArticleFloatingNav />}
+  {latestPost && audioFileExists && <AudioPlayer title={latestPost.data.title} slug={latestPost.slug} formattedDate={formattedDate} />}
 </Layout>

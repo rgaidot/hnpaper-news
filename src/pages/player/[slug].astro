@@ -3,6 +3,9 @@ import { getCollection } from 'astro:content';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Layout from '../../layouts/Layout.astro';
+import TTSPlayer from '../../components/TTSPlayer.astro';
+import AudioPlayer from '../../components/AudioPlayer.astro';
+import ArticleFloatingNav from '../../components/ArticleFloatingNav.astro';
 
 export async function getStaticPaths() {
   const newsEntries = await getCollection('news');
@@ -13,235 +16,48 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
+const { Content } = await entry.render();
+
 const formattedDate = format(entry.data.date, 'EEEE d MMMM yyyy à HH:mm', {
   locale: fr,
 });
+
+const wordsPerMinute = 200;
+const words = entry.body.trim().split(/\s+/).length;
+const readingTime = Math.ceil(words / wordsPerMinute);
 ---
 <Layout title={`Lecture : ${entry.data.title}`}>
-  <script is:inline>
-    window['__onGCastApiAvailable'] = function(isAvailable) {
-      if (isAvailable) {
-        window.dispatchEvent(new Event('google-cast-available'));
-      }
-    };
-    (function() {
-      var script = document.createElement('script');
-      script.src = 'https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1';
-      script.async = true;
-      document.body.appendChild(script);
-    })();
-  </script>
-
-  <div class="fixed inset-0 bg-black text-white">
+  <div class="fixed inset-0 bg-stone-900 -z-10">
     <div 
-      class="absolute inset-0 bg-cover bg-center opacity-50"
+      class="absolute inset-0 bg-cover bg-center opacity-30"
       style="background-image: url('/player-background.png');"
     ></div>
-    <div class="absolute bottom-0 left-0 right-0 z-10 flex items-center gap-6 px-8 py-6 bg-black/60 backdrop-blur-sm">
-      <h1 class="text-lg md:text-xl font-bold font-serif whitespace-nowrap shrink-0">{formattedDate}</h1>
-      
-      <audio 
-        id="audio-player"
-        controls 
-        autoplay 
-        class="w-full"
-        src={`/audio/${entry.slug}.mp3`}
-      >
-        Your browser does not support the audio element.
-      </audio>
-
-      <button id="cast-button" class="hidden text-stone-300 hover:text-white transition-colors" aria-label="Caster sur un appareil" title="Caster sur un appareil">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-        </svg>
-        <!-- Google Cast Icon (Standard path usually differs, using a generic cast-like icon or the official path if possible. Let's use a standard Material cast icon path) -->
-        <svg style="display:none;" class="cast-connected-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24px" height="24px"><path d="M1 18v3h3c0-1.66-1.34-3-3-3zm0-4v2c2.76 0 5 2.24 5 5h2c0-3.87-3.13-7-7-7zm0-4v2c4.97 0 9 4.03 9 9h2c0-6.08-4.92-11-11-11zm9 5.27l7.48-4.31 3.55 2.05-3.55 2.05L22 22l-4.52-2.61L10 22V9.27zM21 3H3c-1.1 0-2 .9-2 2v3h2V5h18v14h-7v2h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
-      </button>
-
-      <a href={`/news/${entry.slug}`} class="text-stone-300 hover:text-white underline decoration-1 hover:decoration-2 whitespace-nowrap shrink-0">
-        Voir l'article
-      </a>
-    </div>
   </div>
+
+  <article class="mx-auto max-w-3xl bg-white/90 backdrop-blur-sm p-8 md:p-12 shadow-2xl my-8 rounded-lg mb-32">
+
+    <header
+      class="mb-10 text-center"
+    >
+      <div
+        class="flex flex-col items-center space-y-2 text-stone-600 font-sans text-sm uppercase tracking-widest pb-8"
+      >
+        <span class="text-2xl font-bold font-sans text-stone-600 uppercase tracking-wides" data-pagefind-meta="title">{formattedDate}</span>
+      </div>
+      <div class="border-t-4 border-b-4 border-double border-stone-300">
+        <TTSPlayer title={entry.data.title} readingTime={readingTime} slug={entry.slug} />
+      </div>
+    </header>
+    <div class="prose prose-stone prose-lg max-w-none mx-auto text-justify 
+      prose-headings:font-serif prose-headings:font-bold prose-headings:text-stone-900
+      prose-p:font-serif prose-p:text-stone-800
+      prose-a:text-stone-900 prose-a:underline prose-a:decoration-1 hover:prose-a:decoration-2 prose-a:font-normal prose-strong:text-base
+      prose-blockquote:border-l-2 prose-blockquote:border-stone-900 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-stone-700
+      prose-img:border prose-img:border-stone-900 prose-img:p-1">
+      <Content />
+    </div>
+  </article>
+
+  <ArticleFloatingNav />
+  <AudioPlayer title={entry.data.title} slug={entry.slug} formattedDate={formattedDate} />
 </Layout>
-
-<script define:vars={{ title: entry.data.title, slug: entry.slug }}>
-  const audio = document.getElementById('audio-player');
-  const castBtn = document.getElementById('cast-button');
-  
-  let castContext = null;
-  let castSession = null;
-  let remotePlayer = null;
-  let remotePlayerController = null;
-
-  // Initialize Media Session Metadata
-  if ('mediaSession' in navigator) {
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: title,
-      artist: 'HNPaper News',
-      album: 'Actualités Tech',
-      artwork: [
-        { src: '/player-background.png', sizes: '1920x1080', type: 'image/png' },
-        { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png' }
-      ]
-    });
-    
-    // Default handlers (local)
-    navigator.mediaSession.setActionHandler('play', () => {
-      if (castSession) {
-        remotePlayerController.playOrPause();
-      } else {
-        audio.play();
-      }
-    });
-    navigator.mediaSession.setActionHandler('pause', () => {
-      if (castSession) {
-        remotePlayerController.playOrPause();
-      } else {
-        audio.pause();
-      }
-    });
-    navigator.mediaSession.setActionHandler('seekbackward', (details) => {
-      if (castSession) {
-        remotePlayer.currentTime = Math.max(remotePlayer.currentTime - (details.seekOffset || 10), 0);
-        remotePlayerController.seek();
-      } else {
-        audio.currentTime = Math.max(audio.currentTime - (details.seekOffset || 10), 0);
-      }
-    });
-    navigator.mediaSession.setActionHandler('seekforward', (details) => {
-      if (castSession) {
-         // Duration might not be available immediately on remote
-        remotePlayer.currentTime = remotePlayer.currentTime + (details.seekOffset || 10);
-        remotePlayerController.seek();
-      } else {
-        audio.currentTime = Math.min(audio.currentTime + (details.seekOffset || 10), audio.duration);
-      }
-    });
-    navigator.mediaSession.setActionHandler('stop', () => {
-       if (castSession) {
-         remotePlayerController.stop();
-       } else {
-         audio.pause();
-         audio.currentTime = 0;
-       }
-    });
-  }
-
-  // Google Cast Initialization
-  window.addEventListener('google-cast-available', () => {
-    initializeCast();
-  });
-
-  function initializeCast() {
-    const cast = window.cast;
-    const chrome = window.chrome;
-
-    if (!cast || !cast.framework) return;
-
-    castContext = cast.framework.CastContext.getInstance();
-    castContext.setOptions({
-      receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
-      autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
-    });
-
-    // Show button now that Cast is available
-    if (castBtn) {
-        castBtn.classList.remove('hidden');
-        // Use standard icon
-        castBtn.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-             <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-             <!-- Fallback simple icon -->
-             <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-            </svg>
-        `;
-        // Replace with Material Cast Icon for better recognition
-        castBtn.innerHTML = `
-          <svg style="width:24px;height:24px" viewBox="0 0 24 24">
-            <path fill="currentColor" d="M1,18L1,21L4,21C4,19.34 2.66,18 1,18M1,14L1,16C3.76,16 6,18.24 6,21L8,21C8,17.13 4.87,14 1,14M1,10L1,12C5.97,12 10,16.03 10,21L12,21C12,14.92 7.07,10 1,10M21,3L3,3C1.9,3 1,3.9 1,5L1,8L3,8L3,5L21,5L21,19L14,19L14,21L21,21C22.1,21 23,20.1 23,19L23,5C23,3.9 22.1,3 21,3Z" />
-          </svg>
-        `;
-        
-        castBtn.addEventListener('click', () => {
-             castContext.requestSession();
-        });
-    }
-
-    remotePlayer = new cast.framework.RemotePlayer();
-    remotePlayerController = new cast.framework.RemotePlayerController(remotePlayer);
-
-    remotePlayerController.addEventListener(
-      cast.framework.RemotePlayerEventType.IS_CONNECTED_CHANGED,
-      () => {
-        if (remotePlayer.isConnected) {
-          console.log('Cast Connected');
-          castSession = castContext.getCurrentSession();
-          if (castBtn) castBtn.classList.add('text-blue-500'); // Indicate active
-          
-          // Stop local audio
-          audio.pause();
-          
-          // Load media on remote
-          loadRemoteMedia();
-        } else {
-          console.log('Cast Disconnected');
-          castSession = null;
-          if (castBtn) castBtn.classList.remove('text-blue-500');
-        }
-      }
-    );
-    
-    // Sync remote state to local UI (optional, but good for play/pause toggle if we had a custom button)
-    remotePlayerController.addEventListener(
-        cast.framework.RemotePlayerEventType.PLAYER_STATE_CHANGED,
-        () => {
-             // We can update the local mediaSession state here if we want the OS lockscreen to reflect Cast state
-             if (remotePlayer.isConnected && 'mediaSession' in navigator) {
-                 const playerState = remotePlayer.playerState;
-                 if (playerState === chrome.cast.media.PlayerState.PLAYING) {
-                     navigator.mediaSession.playbackState = "playing";
-                 } else if (playerState === chrome.cast.media.PlayerState.PAUSED) {
-                     navigator.mediaSession.playbackState = "paused";
-                 }
-             }
-        }
-    );
-  }
-
-  function loadRemoteMedia() {
-    if (!castSession) return;
-    
-    const chrome = window.chrome;
-    const audioUrl = `${window.location.origin}/audio/${slug}.mp3`;
-    const vttUrl = `${window.location.origin}/audio/${slug}.vtt`;
-    
-    const mediaInfo = new chrome.cast.media.MediaInfo(audioUrl, 'audio/mpeg');
-    mediaInfo.streamType = chrome.cast.media.StreamType.BUFFERED;
-    
-    mediaInfo.metadata = new chrome.cast.media.MusicTrackMediaMetadata();
-    mediaInfo.metadata.title = title;
-    mediaInfo.metadata.artist = 'HNPaper News';
-    mediaInfo.metadata.images = [
-      new chrome.cast.Image(`${window.location.origin}/pwa-512x512.png`)
-    ];
-
-    const track = new chrome.cast.media.Track(1, chrome.cast.media.TrackType.TEXT);
-    track.trackContentId = vttUrl;
-    track.trackContentType = 'text/vtt';
-    track.subtype = chrome.cast.media.TextTrackType.SUBTITLES;
-    track.name = 'Français';
-    track.language = 'fr-FR';
-    track.customData = null;
-
-    mediaInfo.tracks = [track];
-    
-    const request = new chrome.cast.media.LoadRequest(mediaInfo);
-    request.activeTrackIds = [1];
-    
-    castSession.loadMedia(request).then(
-      function() { console.log('Load succeed'); },
-      function(errorCode) { console.log('Error code: ' + errorCode); }
-    );
-  }
-</script>

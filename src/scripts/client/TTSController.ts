@@ -6,16 +6,24 @@ export interface TTSOptions {
   onStateChange?: (state: TTSState) => void;
 }
 
+interface VTTCue {
+  start: number;
+  end: number;
+  text: string;
+}
+
 export class TTSController {
   private container: HTMLElement;
   private articleContent: HTMLElement | null;
   private playPauseBtn: HTMLButtonElement | null;
   private stopBtn: HTMLButtonElement | null;
-  private castBtn: HTMLButtonElement | null;
+  private castBtns: HTMLButtonElement[] = [];
   private speedSelect: HTMLSelectElement | null;
   private readingTimeEl: HTMLElement | null;
 
   private utterance: SpeechSynthesisUtterance | null = null;
+  private audioElement: HTMLAudioElement | null = null;
+  private vttCues: VTTCue[] = [];
 
   private state: TTSState = "stopped";
   private wakeLock: any = null;
@@ -45,18 +53,35 @@ export class TTSController {
 
     this.playPauseBtn = this.container.querySelector(".play-pause-tts");
     this.stopBtn = this.container.querySelector(".stop-tts");
-    this.castBtn = this.container.querySelector(".cast-tts");
+
+    const localCastBtn = this.container.querySelector(
+      ".cast-tts",
+    ) as HTMLButtonElement | null;
+    const globalCastBtn = document.getElementById(
+      "cast-button",
+    ) as HTMLButtonElement | null;
+
+    if (localCastBtn) this.castBtns.push(localCastBtn);
+    if (globalCastBtn && !this.castBtns.includes(globalCastBtn))
+      this.castBtns.push(globalCastBtn);
+
     this.speedSelect = this.container.querySelector(".tts-speed");
     this.readingTimeEl = this.container.querySelector(".tts-reading-time");
 
     this.titleText = (this.container.getAttribute("data-title") || "") + ". ";
     this.slug = this.container.getAttribute("data-slug") || "";
 
-    this.silentAudio = document.createElement("audio");
-    this.silentAudio.src = this.SILENT_AUDIO_URL;
-    this.silentAudio.volume = 0.001;
-    this.silentAudio.setAttribute("playsinline", "");
-    document.body.appendChild(this.silentAudio);
+    this.audioElement = document.getElementById(
+      "audio-player",
+    ) as HTMLAudioElement;
+
+    if (!this.audioElement) {
+      this.silentAudio = document.createElement("audio");
+      this.silentAudio.src = this.SILENT_AUDIO_URL;
+      this.silentAudio.volume = 0.001;
+      this.silentAudio.setAttribute("playsinline", "");
+      document.body.appendChild(this.silentAudio);
+    }
 
     this.init();
   }
@@ -118,6 +143,11 @@ export class TTSController {
     this.bindEvents();
     this.initializeCast();
 
+    if (this.audioElement) {
+      this.loadVTT();
+      this.bindAudioEvents();
+    }
+
     window.addEventListener("google-cast-available", () => {
       this.initializeCast();
     });
@@ -145,6 +175,87 @@ export class TTSController {
     this.prepareContent();
   }
 
+  private bindAudioEvents() {
+    if (!this.audioElement) return;
+
+    this.audioElement.addEventListener("play", () =>
+      this.updateState("playing"),
+    );
+    this.audioElement.addEventListener("pause", () =>
+      this.updateState("paused"),
+    );
+    this.audioElement.addEventListener("ended", () => this.stop());
+    this.audioElement.addEventListener("error", () =>
+      this.updateState("error"),
+    );
+
+    this.audioElement.addEventListener("timeupdate", () => {
+      if (this.vttCues.length > 0) {
+        const currentTime = this.audioElement!.currentTime;
+        const activeCueIndex = this.vttCues.findIndex(
+          (cue) => currentTime >= cue.start && currentTime <= cue.end,
+        );
+
+        if (activeCueIndex !== -1) {
+          const titleWordCount = this.titleText.trim().split(/\s+/).length;
+          const wordMapIndex = activeCueIndex - titleWordCount;
+
+          if (wordMapIndex >= 0 && wordMapIndex < this.wordMap.length) {
+            const word = this.wordMap[wordMapIndex];
+
+            this.highlightElement(word.element);
+          }
+        }
+      }
+    });
+  }
+
+  private loadVTT() {
+    fetch(`/audio/${this.slug}.vtt`)
+      .then((res) => res.text())
+      .then((text) => {
+        this.parseVTT(text);
+      })
+      .catch((err) => console.error("Failed to load VTT", err));
+  }
+
+  private parseVTT(vttText: string) {
+    const lines = vttText.split("\n");
+    const cues: VTTCue[] = [];
+    let currentCue: Partial<VTTCue> | null = null;
+
+    const timeRegex = /(\d{2}):(\d{2}):(\d{2})\.(\d{3})/;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (line === "WEBVTT" || line === "") continue;
+
+      if (line.includes("-->")) {
+        const [startStr, endStr] = line.split("-->").map((s) => s.trim());
+        const parseTime = (str: string) => {
+          const match = str.match(timeRegex);
+          if (!match) return 0;
+          const [_, h, m, s, ms] = match;
+          return (
+            parseInt(h) * 3600 +
+            parseInt(m) * 60 +
+            parseInt(s) +
+            parseInt(ms) / 1000
+          );
+        };
+        currentCue = {
+          start: parseTime(startStr),
+          end: parseTime(endStr),
+        };
+      } else if (currentCue && !currentCue.text) {
+        currentCue.text = line;
+        cues.push(currentCue as VTTCue);
+        currentCue = null;
+      }
+    }
+    this.vttCues = cues;
+  }
+
   private initializeCast() {
     const cast = (window as any).cast;
     const chrome = (window as any).chrome;
@@ -158,9 +269,9 @@ export class TTSController {
         autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
       });
 
-      if (this.castBtn) {
-        this.castBtn.classList.remove("hidden");
-        this.castBtn.addEventListener("click", () => {
+      this.castBtns.forEach((btn) => {
+        btn.classList.remove("hidden");
+        btn.addEventListener("click", () => {
           this.castContext.requestSession().then(
             (session: any) => {
               console.log("Session requested success", session);
@@ -170,7 +281,7 @@ export class TTSController {
             },
           );
         });
-      }
+      });
 
       this.remotePlayer = new cast.framework.RemotePlayer();
       this.remotePlayerController = new cast.framework.RemotePlayerController(
@@ -182,14 +293,18 @@ export class TTSController {
         () => {
           if (this.remotePlayer.isConnected) {
             this.castSession = this.castContext.getCurrentSession();
+            if (this.audioElement) this.audioElement.pause();
             this.stop();
+
             this.loadRemoteMedia();
             this.updateState("playing");
-            this.castBtn?.classList.add("text-blue-500");
+            this.castBtns.forEach((btn) => btn.classList.add("text-blue-500"));
           } else {
             this.castSession = null;
             this.updateState("stopped");
-            this.castBtn?.classList.remove("text-blue-500");
+            this.castBtns.forEach((btn) =>
+              btn.classList.remove("text-blue-500"),
+            );
           }
         },
       );
@@ -290,6 +405,16 @@ export class TTSController {
       return;
     }
 
+    if (this.audioElement) {
+      this.updateState("playing");
+      this.requestWakeLock();
+      this.setupMediaSession();
+      this.audioElement
+        .play()
+        .catch((e) => console.error("Audio play failed", e));
+      return;
+    }
+
     if (!window.speechSynthesis) {
       this.updateState("error");
       return;
@@ -325,6 +450,13 @@ export class TTSController {
       return;
     }
 
+    if (this.audioElement) {
+      this.audioElement.pause();
+      this.updateState("paused");
+      this.releaseWakeLock();
+      return;
+    }
+
     if (this.state === "playing") {
       this.updateState("paused");
       this.releaseWakeLock();
@@ -344,6 +476,13 @@ export class TTSController {
       this.remotePlayer.isConnected
     ) {
       this.remotePlayerController.playOrPause();
+      return;
+    }
+
+    if (this.audioElement) {
+      this.updateState("playing");
+      this.requestWakeLock();
+      this.audioElement.play();
       return;
     }
 
@@ -369,12 +508,16 @@ export class TTSController {
       this.remotePlayer.isConnected
     ) {
       this.remotePlayerController.stop();
-
       return;
     }
 
     this.updateState("stopped");
     this.releaseWakeLock();
+
+    if (this.audioElement) {
+      this.audioElement.pause();
+      this.audioElement.currentTime = 0;
+    }
 
     if (this.silentAudio) {
       this.silentAudio.pause();
@@ -395,6 +538,20 @@ export class TTSController {
     );
 
     if (match) {
+      if (this.audioElement && this.vttCues.length > 0) {
+        const mapIndex = this.wordMap.indexOf(match);
+        const titleWordCount = this.titleText.trim().split(/\s+/).length;
+        const cueIndex = mapIndex + titleWordCount;
+
+        if (cueIndex < this.vttCues.length) {
+          const cue = this.vttCues[cueIndex];
+          this.audioElement.currentTime = cue.start;
+          this.audioElement.play();
+          this.updateState("playing");
+        }
+        return;
+      }
+
       const globalIndex = this.titleText.length + match.start;
 
       const sIdx = this.sentences.findIndex(
@@ -599,10 +756,14 @@ export class TTSController {
     );
 
     if (match) {
-      this.clearHighlight();
-      match.element.classList.add("tts-active");
-      match.element.scrollIntoView({ behavior: "smooth", block: "center" });
+      this.highlightElement(match.element);
     }
+  }
+
+  private highlightElement(element: HTMLElement) {
+    this.clearHighlight();
+    element.classList.add("tts-active");
+    element.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   private clearHighlight() {
@@ -623,7 +784,12 @@ export class TTSController {
       new CustomEvent("tts:speed-changed", { detail: { speed: newRate } }),
     );
 
+    if (this.audioElement) {
+      this.audioElement.playbackRate = newRate;
+    }
+
     if (this.state === "playing") {
+      if (this.audioElement) return;
       window.speechSynthesis.cancel();
       this.speakSentence();
     }

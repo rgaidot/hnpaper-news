@@ -55,7 +55,7 @@ function cleanMarkdown(markdown: string): string {
   text = text.replace(/\[([^\]]+)\]\([^\)]+\)/g, "$1");
   text = text.replace(/(https?:\/\/[^\s]+)/g, "");
   text = text.replace(/<[^>]+>/g, "");
-  text = text.replace(/^[ \t]*[-*+]\s*(Discussion HN|Article source).*$/gm, "");
+  text = text.replace(/^[ \t]*[-*+]\s*[\*_]*(Discussion HN|Article source)[\*_]*.*$/gm, "");
   text = text.replace(/^#+\s+/gm, "");
   text = text.replace(/^[-*+]\s+/gm, "");
   text = text.replace(/\*\*([^*]+)\*\*/g, "$1");
@@ -63,6 +63,7 @@ function cleanMarkdown(markdown: string): string {
   text = text.replace(/__([^_]+)__/g, "$1");
   text = text.replace(/_([^_]+)_/g, "$1");
   text = text.replace(/\n{3,}/g, "\n\n");
+  text = text.replace(/[^\p{L}\p{N}\p{P}\p{Z}\n]/gu, " ");
 
   return text.trim();
 }

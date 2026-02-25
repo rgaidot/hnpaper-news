@@ -3,8 +3,11 @@ import { getCollection } from 'astro:content';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import TTSPlayer from '../../components/TTSPlayer.astro';
+import AudioPlayer from '../../components/AudioPlayer.astro';
 import Layout from '../../layouts/Layout.astro';
 import ArticleFloatingNav from '../../components/ArticleFloatingNav.astro';
+import fs from 'node:fs';
+import path from 'node:path';
 
 export async function getStaticPaths() {
   const newsEntries = await getCollection('news');
@@ -30,10 +33,12 @@ const formattedDate = format(entry.data.date, 'EEEE d MMMM yyyy à HH:mm', {
 const wordsPerMinute = 200;
 const words = entry.body.trim().split(/\s+/).length;
 const readingTime = Math.ceil(words / wordsPerMinute);
+
+const audioFileExists = fs.existsSync(path.join(process.cwd(), 'public', 'audio', `${entry.slug}.mp3`));
 ---
 
 <Layout title={entry.data.title}>
-  <article class="mx-auto max-w-3xl" data-pagefind-body>
+  <article class="mx-auto max-w-3xl pb-24" data-pagefind-body>
     <header
       class="mb-10 text-center"
     >
@@ -96,4 +101,5 @@ const readingTime = Math.ceil(words / wordsPerMinute);
   </article>
 
   <ArticleFloatingNav />
+  {audioFileExists && <AudioPlayer title={entry.data.title} slug={entry.slug} formattedDate={formattedDate} />}
 </Layout>
