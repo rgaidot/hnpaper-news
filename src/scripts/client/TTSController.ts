@@ -598,6 +598,10 @@ export class TTSController {
       }
     });
 
+    this.articleContent.querySelectorAll("pre").forEach((el) => {
+      el.classList.add("tts-ignore");
+    });
+
     const walker = document.createTreeWalker(
       this.articleContent,
       NodeFilter.SHOW_TEXT,
@@ -763,7 +767,6 @@ export class TTSController {
   private highlightElement(element: HTMLElement) {
     this.clearHighlight();
     element.classList.add("tts-active");
-    element.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   private clearHighlight() {
