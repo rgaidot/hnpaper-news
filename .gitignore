@@ -25,3 +25,5 @@ pnpm-debug.log*
 
 # pagefind search index (generated)
 public/pagefind/
+
+*part*.mp3
