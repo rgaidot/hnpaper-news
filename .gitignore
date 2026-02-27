@@ -27,3 +27,5 @@ pnpm-debug.log*
 public/pagefind/
 
 *part*.mp3
+
+tts_server/

@@ -345,7 +345,7 @@ async function generateAudio() {
     `Audio generation — ${files.length} article(s)${forceRegeneration ? " · forced mode" : ""}`,
   );
 
-  const CONCURRENCY_LIMIT = 10;
+  const CONCURRENCY_LIMIT = 30;
   const activePromises = new Set<Promise<void>>();
 
   for (let i = 0; i < files.length; i++) {
