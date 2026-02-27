@@ -6,6 +6,7 @@ import LayoutPlayer from '../../layouts/LayoutPlayer.astro';
 import TTSPlayer from '../../components/TTSPlayer.astro';
 import AudioPlayer from '../../components/AudioPlayer.astro';
 import ArticleFloatingNav from '../../components/ArticleFloatingNav.astro';
+import VoiceVisualizer from '../../components/VoiceVisualizer.astro';
 
 export async function getStaticPaths() {
   const newsEntries = await getCollection('news');
@@ -29,4 +30,10 @@ const readingTime = Math.ceil(words / wordsPerMinute);
 <LayoutPlayer title={`Lecture : ${entry.data.title}`}>
   <ArticleFloatingNav />
   <AudioPlayer title={entry.data.title} slug={entry.slug} formattedDate={formattedDate} />
+  
+  <div class="flex items-center justify-center w-full">
+    <div class="w-full">
+      <VoiceVisualizer />
+    </div>
+  </div>
 </LayoutPlayer>
