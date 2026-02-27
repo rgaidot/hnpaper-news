@@ -8,11 +8,11 @@ This project is version v2, rebuilt with **Astro** to replace the old Jekyll ver
 
 -   **Daily Summaries**: Automated archives of HNPaper news.
 -   **Audio Player (TTS)**: Integrated text-to-speech functionality to listen to articles. MP3 audio files are automatically generated for each article by the `generate-audio.ts` script, which are then used by the TTS player and for Google Cast.
-    -   **Google Cast Support**: Stream article audio to Google Cast devices (e.g., Google Home, Chromecast).
+    -   **Google Cast Support**: Stream article audio to Google Cast devices (e.g., Google Home, Chromecast) with subtitle support.
         
         ### How to Use Google Cast
 
-        1.  **Ensure Audio is Generated**: The MP3 audio files for the articles are **automatically generated** by the `generate-audio.ts` script. Ensure this script has run (e.g., as part of the CI/CD pipeline or manually via `bun run scripts/generate-audio.ts`).
+        1.  **Ensure Audio is Generated**: The `.mp3` audio files, `.vtt` subtitles, and `.json` timestamps for the articles are **automatically generated** by the `generate-audio.ts` script. Ensure this script has run.
 
         2.  **Access Your Site (Important for Local Development)**:
             *   **Production (GitHub Pages)**: Simply go to your live site URL (e.g., `https://hnpaper-news-labs.gaidot.net`).
@@ -24,11 +24,11 @@ This project is version v2, rebuilt with **Astro** to replace the old Jekyll ver
             *   Select **"Cast..."**.
             *   Choose your desired Google Cast device from the list.
 
-        4.  **Playback**: The audio of the article will begin playing on your Google Cast device. Your browser will display a Cast control interface.
+        4.  **Playback**: The audio of the article will begin playing on your Google Cast device. Subtitles will be displayed if the device supports them.
 
     -   Uses a dynamic and engaging female voice (French).
     -   Adjustable playback speed (0.75x to 7x).
-    -   Interactive highlighting (karaoke style).
+    -   Interactive highlighting (karaoke style) powered by generated word timestamps.
     -   Click on any word to start reading from there.
     -   **Shortcut**: Press `Space` to Play/Pause.
 -   **PWA Support**: Installable as a native app on mobile and desktop devices with offline caching capabilities.
@@ -42,6 +42,7 @@ This project is version v2, rebuilt with **Astro** to replace the old Jekyll ver
 -   **Framework**: [Astro](https://astro.build) v5
 -   **Styles**: [Tailwind CSS](https://tailwindcss.com) v4
 -   **PWA**: Vite PWA
+-   **Linting/Formatting**: [Biome](https://biomejs.dev)
 -   **Hosting**: GitHub Pages
 
 ## 📂 Project Structure
@@ -99,7 +100,7 @@ Prerequisites: Bun installed (https://bun.sh).
 
 3.  **Generate Audio Files**
 
-    The project automatically generates `.mp3` audio files for each article, which are used by the TTS player and Google Cast.
+    The project automatically generates `.mp3` audio files, `.vtt` subtitles, and `.json` timestamps for each article, which are used by the TTS player and Google Cast.
     
     ```bash
     bun run scripts/generate-audio.ts
@@ -111,7 +112,22 @@ Prerequisites: Bun installed (https://bun.sh).
     bun run scripts/generate-audio.ts --force
     ```
 
-4.  **Preview the production build**
+4.  **Linting & Formatting**
+
+    The project uses Biome for linting and formatting.
+
+    ```bash
+    # Lint files
+    bun run lint
+
+    # Format files
+    bun run format
+
+    # Check and fix issues
+    bun run check:fix
+    ```
+
+5.  **Preview the production build**
 
     ```bash
     bun run preview
