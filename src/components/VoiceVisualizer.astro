@@ -1,0 +1,225 @@
+---
+// VoiceVisualizer.astro
+// Symmetric bar visualizer — bars grow from the vertical center outward,
+// matching the style in the reference image.
+// Reads --vv-accent CSS variable for color (fallback: currentColor).
+---
+
+<div class="vv-wrap" aria-hidden="true">
+  <canvas id="voice-visualizer"></canvas>
+</div>
+
+<style>
+  .vv-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 80vh;
+    overflow: hidden;
+  }
+
+  #voice-visualizer {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+</style>
+
+<script>
+  (function () {
+    const canvas = document.getElementById('voice-visualizer') as HTMLCanvasElement | null;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // ── Config ────────────────────────────────────────────────────────────
+    const LINE_WIDTH  = 1;    // px width of the wave line
+    
+    // ── Audio pipeline ────────────────────────────────────────────────────
+    let audioCtx: AudioContext | null = null;
+    let analyser: AnalyserNode | null = null;
+    let dataArray: Uint8Array | null = null;
+    let idleData: Uint8Array | null = null;
+    let animFrame: number | null = null;
+    let isPlaying = false;
+    let isSetup = false;
+    let frame = 0;
+
+    function setup(audioEl: HTMLAudioElement) {
+      if (isSetup) return;
+      isSetup = true;
+      audioCtx  = new AudioContext();
+      analyser  = audioCtx.createAnalyser();
+      analyser.fftSize = 2048; 
+      const source = audioCtx.createMediaElementSource(audioEl);
+      source.connect(analyser);
+      analyser.connect(audioCtx.destination);
+      dataArray = new Uint8Array(analyser.fftSize);
+      idleData = new Uint8Array(analyser.fftSize).fill(128);
+    }
+
+    // ── Canvas resize ─────────────────────────────────────────────────────
+    function resize() {
+      const dpr  = window.devicePixelRatio || 1;
+      const rect = canvas!.getBoundingClientRect();
+      canvas!.width  = rect.width  * dpr;
+      canvas!.height = rect.height * dpr;
+    }
+    new ResizeObserver(resize).observe(canvas);
+    resize();
+
+    // ── Accent color ──────────────────────────────────────────────────────
+    const ACCENT = 'white'; 
+
+    function accentColor(): string {
+      return ACCENT;
+    }
+
+    // ── Draw ──────────────────────────────────────────────────────────────
+    function drawWave(data: Uint8Array, offset: number, amplitude: number, color: string, alpha: number) {
+      const dpr  = window.devicePixelRatio || 1;
+      const W    = canvas!.width;
+      const H    = canvas!.height;
+      const midY = H / 2;
+      
+      ctx!.beginPath();
+      ctx!.lineWidth = LINE_WIDTH * dpr;
+      ctx!.strokeStyle = color;
+      ctx!.globalAlpha = alpha;
+      
+      const step = 32;
+      const sliceWidth = W * 1.0 / (data.length / step); 
+      let x = 0;
+      let y = midY;
+
+      // Start
+      ctx!.moveTo(0, midY);
+
+      // Points array for smoothing
+      let points: {x: number, y: number}[] = [];
+
+      for (let i = 0; i < data.length; i += step) {
+        const v = data[i] / 128.0; 
+        const displacement = (v - 1) * midY * amplitude; 
+        
+        // Add sine wave movement
+        // x in pixels is roughly i * (W/2048). 
+        // We use 'x' variable for drawing, but for sine phase we can use 'i'
+        const drift = Math.sin(frame * 0.02 + i * 0.01 + offset) * (15 * dpr); // increased drift
+        
+        const finalY = midY + displacement + drift;
+        
+        points.push({ x, y: finalY });
+        x += sliceWidth;
+      }
+
+      // Draw smooth curve through points
+      if (points.length > 1) {
+        ctx!.moveTo(points[0].x, points[0].y);
+        
+        for (let i = 1; i < points.length - 2; i++) {
+          const xc = (points[i].x + points[i + 1].x) / 2;
+          const yc = (points[i].y + points[i + 1].y) / 2;
+          ctx!.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+        }
+        
+        // Curve through the last two points
+        if (points.length > 2) {
+             const last = points[points.length - 1];
+             const secondLast = points[points.length - 2];
+             ctx!.quadraticCurveTo(secondLast.x, secondLast.y, last.x, last.y);
+        }
+      }
+      
+      ctx!.stroke();
+    }
+
+    function drawFrame() {
+      const dpr  = window.devicePixelRatio || 1;
+      const W    = canvas!.width;
+      const H    = canvas!.height;
+      const midY = H / 2;
+
+      ctx!.clearRect(0, 0, W, H);
+      frame++;
+      
+      const color = accentColor();
+      
+      // If not setup or not playing, show a simple idle wave
+      if (!isPlaying || !analyser || !dataArray || !idleData) {
+        // Create temp idle data if needed (before setup)
+        const tempIdle = idleData || new Uint8Array(2048).fill(128);
+        drawWave(tempIdle, 0, 0.05, color, 0.2); // Reduced amplitude
+        drawWave(tempIdle, 2, 0.05, color, 0.1);
+        return;
+      }
+
+      analyser.getByteTimeDomainData(dataArray);
+
+      // Glow effect
+      ctx!.shadowBlur = 15 * dpr;
+      ctx!.shadowColor = color;
+
+      // Draw 3 layers of waves
+      // Layer 1: Background, slow, low opacity
+      drawWave(dataArray, 0, 1.0, color, 0.3);
+      
+      // Layer 2: Middle, different phase
+      drawWave(dataArray, 2, 1.0, color, 0.5);
+      
+      // Layer 3: Main, sharpest
+      drawWave(dataArray, 4, 1.2, color, 0.9);
+      
+      // Reset shadow
+      ctx!.shadowBlur = 0;
+    }
+
+    // ── Animation loop ────────────────────────────────────────────────────
+    function loop() {
+      drawFrame();
+      animFrame = requestAnimationFrame(loop);
+    }
+
+    // Start loop immediately so idle state is visible on page load
+    loop();
+
+    // ── State control ─────────────────────────────────────────────────────
+    function onPlay(audioEl: HTMLAudioElement) {
+      setup(audioEl);
+      if (audioCtx?.state === 'suspended') audioCtx.resume();
+      isPlaying = true;
+    }
+
+    function onStop() {
+      isPlaying = false;
+    }
+
+    // ── Attach to audio element ───────────────────────────────────────────
+    function attach(audioEl: HTMLAudioElement) {
+      audioEl.addEventListener('play',  () => onPlay(audioEl));
+      audioEl.addEventListener('pause', onStop);
+      audioEl.addEventListener('ended', onStop);
+    }
+
+    const existing = document.getElementById('audio-player') as HTMLAudioElement | null;
+    if (existing) {
+      attach(existing);
+    } else {
+      const mo = new MutationObserver(() => {
+        const el = document.getElementById('audio-player') as HTMLAudioElement | null;
+        if (el) { attach(el); mo.disconnect(); }
+      });
+      mo.observe(document.body, { childList: true, subtree: true });
+    }
+
+    // Also respond to TTSController events
+    window.addEventListener('tts:state-changed', (e: Event) => {
+      const { state } = (e as CustomEvent).detail;
+      const audioEl   = document.getElementById('audio-player') as HTMLAudioElement | null;
+      if (!audioEl) return;
+      if (state === 'playing') onPlay(audioEl);
+      else onStop();
+    });
+  })();
+</script>
