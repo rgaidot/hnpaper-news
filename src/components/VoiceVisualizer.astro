@@ -1,7 +1,6 @@
 ---
 // VoiceVisualizer.astro
-// Symmetric bar visualizer — bars grow from the vertical center outward,
-// matching the style in the reference image.
+// Symmetric bar visualizer — bars grow from the vertical center outward.
 // Reads --vv-accent CSS variable for color (fallback: currentColor).
 ---
 
@@ -11,12 +10,16 @@
 
 <style>
   .vv-wrap {
+    position: fixed;
+    inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
-    height: 80vh;
+    width: 100vw;
+    height: 100vh;
     overflow: hidden;
+    z-index: -5; /* Behind content but above the base background */
+    pointer-events: none; /* Don't block clicks */
   }
 
   #voice-visualizer {
@@ -34,29 +37,32 @@
     if (!ctx) return;
 
     // ── Config ────────────────────────────────────────────────────────────
-    const LINE_WIDTH  = 1;    // px width of the wave line
+    const BAR_WIDTH_BASE = 4; // Target width in px (will be scaled by dpr)
+    const BAR_GAP_BASE = 2;   // Target gap in px
+    const BAR_RADIUS = 2;     // px radius for rounded corners
+    const MIRRORED = true;    // Symmetric visualization
     
     // ── Audio pipeline ────────────────────────────────────────────────────
     let audioCtx: AudioContext | null = null;
     let analyser: AnalyserNode | null = null;
     let dataArray: Uint8Array | null = null;
-    let idleData: Uint8Array | null = null;
     let animFrame: number | null = null;
     let isPlaying = false;
     let isSetup = false;
-    let frame = 0;
 
     function setup(audioEl: HTMLAudioElement) {
       if (isSetup) return;
       isSetup = true;
       audioCtx  = new AudioContext();
       analyser  = audioCtx.createAnalyser();
+      // fftSize 2048 -> 1024 bins. Enough for full width high res.
       analyser.fftSize = 2048; 
+      analyser.smoothingTimeConstant = 0.85;
+
       const source = audioCtx.createMediaElementSource(audioEl);
       source.connect(analyser);
       analyser.connect(audioCtx.destination);
-      dataArray = new Uint8Array(analyser.fftSize);
-      idleData = new Uint8Array(analyser.fftSize).fill(128);
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
     }
 
     // ── Canvas resize ─────────────────────────────────────────────────────
@@ -70,71 +76,13 @@
     resize();
 
     // ── Accent color ──────────────────────────────────────────────────────
-    const ACCENT = 'white'; 
+    const ACCENT = 'oklch(0.768 0.233 130.85 / 0.4)'; 
 
     function accentColor(): string {
       return ACCENT;
     }
 
     // ── Draw ──────────────────────────────────────────────────────────────
-    function drawWave(data: Uint8Array, offset: number, amplitude: number, color: string, alpha: number) {
-      const dpr  = window.devicePixelRatio || 1;
-      const W    = canvas!.width;
-      const H    = canvas!.height;
-      const midY = H / 2;
-      
-      ctx!.beginPath();
-      ctx!.lineWidth = LINE_WIDTH * dpr;
-      ctx!.strokeStyle = color;
-      ctx!.globalAlpha = alpha;
-      
-      const step = 32;
-      const sliceWidth = W * 1.0 / (data.length / step); 
-      let x = 0;
-      let y = midY;
-
-      // Start
-      ctx!.moveTo(0, midY);
-
-      // Points array for smoothing
-      let points: {x: number, y: number}[] = [];
-
-      for (let i = 0; i < data.length; i += step) {
-        const v = data[i] / 128.0; 
-        const displacement = (v - 1) * midY * amplitude; 
-        
-        // Add sine wave movement
-        // x in pixels is roughly i * (W/2048). 
-        // We use 'x' variable for drawing, but for sine phase we can use 'i'
-        const drift = Math.sin(frame * 0.02 + i * 0.01 + offset) * (15 * dpr); // increased drift
-        
-        const finalY = midY + displacement + drift;
-        
-        points.push({ x, y: finalY });
-        x += sliceWidth;
-      }
-
-      // Draw smooth curve through points
-      if (points.length > 1) {
-        ctx!.moveTo(points[0].x, points[0].y);
-        
-        for (let i = 1; i < points.length - 2; i++) {
-          const xc = (points[i].x + points[i + 1].x) / 2;
-          const yc = (points[i].y + points[i + 1].y) / 2;
-          ctx!.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
-        }
-        
-        // Curve through the last two points
-        if (points.length > 2) {
-             const last = points[points.length - 1];
-             const secondLast = points[points.length - 2];
-             ctx!.quadraticCurveTo(secondLast.x, secondLast.y, last.x, last.y);
-        }
-      }
-      
-      ctx!.stroke();
-    }
-
     function drawFrame() {
       const dpr  = window.devicePixelRatio || 1;
       const W    = canvas!.width;
@@ -142,37 +90,117 @@
       const midY = H / 2;
 
       ctx!.clearRect(0, 0, W, H);
-      frame++;
       
       const color = accentColor();
+      ctx!.fillStyle = color;
+
+      const barWidth = BAR_WIDTH_BASE * dpr;
+      const barGap = BAR_GAP_BASE * dpr;
       
-      // If not setup or not playing, show a simple idle wave
-      if (!isPlaying || !analyser || !dataArray || !idleData) {
-        // Create temp idle data if needed (before setup)
-        const tempIdle = idleData || new Uint8Array(2048).fill(128);
-        drawWave(tempIdle, 0, 0.05, color, 0.2); // Reduced amplitude
-        drawWave(tempIdle, 2, 0.05, color, 0.1);
+      // Calculate how many bars fit in the width
+      const totalWidthPerBar = barWidth + barGap;
+      const maxBars = Math.floor(W / totalWidthPerBar);
+      
+      // For mirrored: we need an even number of bars
+      // effectively 'binsToUse' = maxBars / 2
+      let binsToUse = Math.floor(maxBars / (MIRRORED ? 2 : 1));
+      // Cap binsToUse to available frequency data (usually 1024)
+      // We limit to ~120-150 effectively for voice range usually, but let's fill screen.
+      // If screen is huge, we might stretch the low frequency range too much.
+      // Let's just use what we have.
+      
+      const totalBars = MIRRORED ? binsToUse * 2 : binsToUse;
+      const actualTotalWidth = totalBars * totalWidthPerBar - barGap;
+      const startX = (W - actualTotalWidth) / 2;
+
+      if (!isPlaying || !analyser || !dataArray) {
+        // Idle state
+        for (let i = 0; i < totalBars; i++) {
+            const h = 4 * dpr;
+            const x = startX + i * totalWidthPerBar;
+            const y = midY - h/2;
+            
+            if (ctx!.roundRect) {
+                ctx!.beginPath();
+                ctx!.roundRect(x, y, barWidth, h, BAR_RADIUS * dpr);
+                ctx!.fill();
+            } else {
+                ctx!.fillRect(x, y, barWidth, h);
+            }
+        }
         return;
       }
 
-      analyser.getByteTimeDomainData(dataArray);
+      analyser.getByteFrequencyData(dataArray);
 
-      // Glow effect
-      ctx!.shadowBlur = 15 * dpr;
-      ctx!.shadowColor = color;
+      // We want to map 'binsToUse' bars to the useful frequency range.
+      // Voice is mostly 0-4kHz. 
+      // With 44.1kHz sample rate, 1024 bins cover 0-22kHz.
+      // So 0-4kHz is roughly the first 20% of bins (~200 bins).
+      // If we have more bars than 200, we might need to interpolate or just show higher freqs (noise).
+      // If we have fewer bars, we skip bins.
+      
+      // Let's focus on the first ~300 bins for better visuals.
+      const usefulBins = 300; 
 
-      // Draw 3 layers of waves
-      // Layer 1: Background, slow, low opacity
-      drawWave(dataArray, 0, 1.0, color, 0.3);
-      
-      // Layer 2: Middle, different phase
-      drawWave(dataArray, 2, 1.0, color, 0.5);
-      
-      // Layer 3: Main, sharpest
-      drawWave(dataArray, 4, 1.2, color, 0.9);
-      
-      // Reset shadow
-      ctx!.shadowBlur = 0;
+      for (let i = 0; i < binsToUse; i++) {
+        // Map bar index 'i' to frequency index
+        const freqIndex = Math.floor(i * (usefulBins / binsToUse));
+        
+        // Safety check
+        const safeIndex = Math.min(freqIndex, dataArray.length - 1);
+        
+        // Boost high frequencies slightly
+        const boost = 1 + (i / binsToUse) * 0.8;
+        const val = Math.min(255, dataArray[safeIndex] * boost);
+        
+        const h = Math.max(4 * dpr, (val / 255) * (H * 0.6)); 
+        const y = midY - h/2;
+
+        if (MIRRORED) {
+            // Draw Left (going outwards from center? Or mirrored left/right side?)
+            // "Symmetric bar visualizer — bars grow from the vertical center outward"
+            // Usually means low freqs in center, high freqs at edges.
+            
+            // Left side: index goes from center (binsToUse-1) down to 0 ? 
+            // Or 0 at far left?
+            // If low freqs are center:
+            // Center is between binsToUse-1 and binsToUse.
+            
+            const leftIndex = binsToUse - 1 - i; 
+            const xLeft = startX + leftIndex * totalWidthPerBar;
+            
+            if (ctx!.roundRect) {
+                 ctx!.beginPath();
+                 ctx!.roundRect(xLeft, y, barWidth, h, BAR_RADIUS * dpr);
+                 ctx!.fill();
+            } else {
+                 ctx!.fillRect(xLeft, y, barWidth, h);
+            }
+
+            // Right side
+            const rightIndex = binsToUse + i;
+            const xRight = startX + rightIndex * totalWidthPerBar;
+
+             if (ctx!.roundRect) {
+                 ctx!.beginPath();
+                 ctx!.roundRect(xRight, y, barWidth, h, BAR_RADIUS * dpr);
+                 ctx!.fill();
+            } else {
+                 ctx!.fillRect(xRight, y, barWidth, h);
+            }
+        } else {
+             // Linear
+             const x = startX + i * totalWidthPerBar;
+             if (ctx!.roundRect) {
+                 ctx!.beginPath();
+                 ctx!.roundRect(x, y, barWidth, h, BAR_RADIUS * dpr);
+                 ctx!.fill();
+            } else {
+                 ctx!.fillRect(x, y, barWidth, h);
+            }
+        }
+      }
     }
 
     // ── Animation loop ────────────────────────────────────────────────────
@@ -181,7 +209,6 @@
       animFrame = requestAnimationFrame(loop);
     }
 
-    // Start loop immediately so idle state is visible on page load
     loop();
 
     // ── State control ─────────────────────────────────────────────────────
@@ -213,7 +240,6 @@
       mo.observe(document.body, { childList: true, subtree: true });
     }
 
-    // Also respond to TTSController events
     window.addEventListener('tts:state-changed', (e: Event) => {
       const { state } = (e as CustomEvent).detail;
       const audioEl   = document.getElementById('audio-player') as HTMLAudioElement | null;
