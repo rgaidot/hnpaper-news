@@ -429,7 +429,7 @@ export class TTSController {
     mediaInfo.metadata.title = this.titleText.replace(/\.\s*$/, "");
     mediaInfo.metadata.artist = "HNPaper News";
     mediaInfo.metadata.images = [
-      new chrome.cast.Image(`${origin}/pwa-512x512.png`),
+      new chrome.cast.Image(`${origin}/player-background.png`),
     ];
 
     const track = new chrome.cast.media.Track(
@@ -439,7 +439,7 @@ export class TTSController {
     track.trackContentId = `${origin}/audio/${this.slug}.vtt`;
     track.trackContentType = "text/vtt";
     track.subtype = chrome.cast.media.TextTrackType.SUBTITLES;
-    track.name = "French";
+    track.name = "Français";
     track.language = "fr-FR";
     track.customData = null;
     mediaInfo.tracks = [track];

@@ -163,7 +163,7 @@ export function initPlayer() {
       vttUrl,
       title,
       artist: "HNPaper News",
-      imageUrl: `${window.location.origin}/pwa-512x512.png`,
+      imageUrl: `${window.location.origin}/player-background.png`,
     }).then(
       () => console.log("Load succeed"),
       (errorCode) => console.log("Error code: " + errorCode),
