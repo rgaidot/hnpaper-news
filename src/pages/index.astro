@@ -5,7 +5,6 @@ import { fr } from "date-fns/locale";
 import TTSPlayer from "../components/TTSPlayer.astro";
 import AudioPlayer from "../components/AudioPlayer.astro";
 import Layout from "../layouts/Layout.astro";
-import ArticleFloatingNav from "../components/ArticleFloatingNav.astro";
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -65,6 +64,5 @@ if (latestPost) {
       </div>
     )
   }
-  {latestPost && <ArticleFloatingNav />}
   {latestPost && audioFileExists && <AudioPlayer title={latestPost.data.title} slug={latestPost.slug} formattedDate={formattedDate} />}
 </Layout>

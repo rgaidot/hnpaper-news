@@ -87,8 +87,8 @@ export class ArticleNavigation {
       this.totalSpan.textContent = this.sections.length.toString();
 
     if (this.sections.length > 1) {
-      this.navContainer?.classList.remove("opacity-0", "translate-y-4");
-      this.navContainer?.classList.add("opacity-75", "translate-y-0");
+      this.navContainer?.classList.remove("opacity-0");
+      this.navContainer?.classList.add("opacity-100");
     }
   }
 

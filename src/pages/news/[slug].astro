@@ -5,7 +5,6 @@ import { fr } from 'date-fns/locale';
 import TTSPlayer from '../../components/TTSPlayer.astro';
 import AudioPlayer from '../../components/AudioPlayer.astro';
 import Layout from '../../layouts/Layout.astro';
-import ArticleFloatingNav from '../../components/ArticleFloatingNav.astro';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -100,6 +99,5 @@ const audioFileExists = fs.existsSync(path.join(process.cwd(), 'public', 'audio'
     </div>
   </article>
 
-  <ArticleFloatingNav />
   {audioFileExists && <AudioPlayer title={entry.data.title} slug={entry.slug} formattedDate={formattedDate} />}
 </Layout>
