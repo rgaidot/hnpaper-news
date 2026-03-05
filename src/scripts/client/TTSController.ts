@@ -16,7 +16,6 @@ export class TTSController {
   private container: HTMLElement;
   private articleContent: HTMLElement | null;
   private playPauseBtn: HTMLButtonElement | null;
-  private stopBtn: HTMLButtonElement | null;
   private castBtns: HTMLButtonElement[] = [];
   private speedSelect: HTMLSelectElement | null;
   private readingTimeEl: HTMLElement | null;
@@ -59,7 +58,6 @@ export class TTSController {
     );
 
     this.playPauseBtn = this.container.querySelector(".play-pause-tts");
-    this.stopBtn = this.container.querySelector(".stop-tts");
 
     const localCastBtn = this.container.querySelector(
       ".cast-tts",
@@ -94,7 +92,7 @@ export class TTSController {
   // ── Init ──────────────────────────────────────────────────────────────────
 
   private init() {
-    if (!this.playPauseBtn || !this.stopBtn || !this.speedSelect) return;
+    if (!this.playPauseBtn || !this.speedSelect) return;
 
     this.bindEvents();
     this.initializeCast();
@@ -456,7 +454,6 @@ export class TTSController {
 
   private bindEvents() {
     this.playPauseBtn?.addEventListener("click", () => this.toggle());
-    this.stopBtn?.addEventListener("click", () => this.stop());
     this.speedSelect?.addEventListener("change", () => this.updateSpeed());
   }
 
@@ -894,30 +891,25 @@ export class TTSController {
     window.dispatchEvent(
       new CustomEvent("tts:state-changed", { detail: { state: newState } }),
     );
-    if (!this.playPauseBtn || !this.stopBtn) return;
+    if (!this.playPauseBtn) return;
 
     if (newState === "playing") {
       this.playPauseBtn.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-label="Pause" title="Pause">
           <path stroke-linecap="round" stroke-linejoin="round" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>`;
-      this.stopBtn.classList.remove("hidden");
     } else if (newState === "paused") {
       this.playPauseBtn.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-label="Resume" title="Resume">
           <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
           <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>`;
-      this.stopBtn.classList.remove("hidden");
     } else if (newState === "stopped") {
       this.playPauseBtn.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-label="Play" title="Play">
           <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
           <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>`;
-      this.stopBtn.classList.add("hidden");
-    } else if (newState === "error") {
-      this.stopBtn.classList.add("hidden");
     }
   }
 }
