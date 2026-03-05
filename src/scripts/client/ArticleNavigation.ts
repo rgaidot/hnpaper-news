@@ -50,31 +50,49 @@ export class ArticleNavigation {
   }
 
   private scanSections() {
-    const article = document.querySelector(".prose") as HTMLElement;
+    const article =
+      document.querySelector(".bento-container") ||
+      (document.querySelector(".prose") as HTMLElement);
     if (!article) return;
 
-    const hrs = Array.from(article.querySelectorAll("hr"));
     this.sections = [];
 
-    if (article.firstElementChild) {
-      this.sections.push({
-        top: article.getBoundingClientRect().top + window.scrollY,
-        element: article.firstElementChild as HTMLElement,
-      });
-    }
+    // Check for bento sections first
+    const bentoSections = Array.from(
+      article.querySelectorAll(".bento-card"),
+    ) as HTMLElement[];
 
-    hrs.forEach((hr) => {
-      let nextEl = hr.nextElementSibling;
-      while (nextEl && nextEl.tagName === "HR") {
-        nextEl = nextEl.nextElementSibling;
-      }
-      if (nextEl) {
+    if (bentoSections.length > 0) {
+      bentoSections.forEach((section, index) => {
         this.sections.push({
-          top: hr.getBoundingClientRect().top + window.scrollY,
-          element: nextEl as HTMLElement,
+          top: section.getBoundingClientRect().top + window.scrollY,
+          element: section,
+        });
+      });
+    } else {
+      // Fallback for non-bento or before-wrap state
+      const hrs = Array.from(article.querySelectorAll("hr"));
+
+      if (article.firstElementChild) {
+        this.sections.push({
+          top: article.getBoundingClientRect().top + window.scrollY,
+          element: article.firstElementChild as HTMLElement,
         });
       }
-    });
+
+      hrs.forEach((hr) => {
+        let nextEl = hr.nextElementSibling;
+        while (nextEl && nextEl.tagName === "HR") {
+          nextEl = nextEl.nextElementSibling;
+        }
+        if (nextEl) {
+          this.sections.push({
+            top: hr.getBoundingClientRect().top + window.scrollY,
+            element: nextEl as HTMLElement,
+          });
+        }
+      });
+    }
 
     this.sections.forEach((section, index) => {
       if (!section.element) return;
@@ -97,14 +115,22 @@ export class ArticleNavigation {
       element.style.position = "relative";
     }
 
+    let targetForNumber = element;
+    if (element.classList.contains("bento-card")) {
+      targetForNumber =
+        (element.querySelector("p, h2, h3, h4, h5, h6") as HTMLElement) ||
+        element;
+    }
+
     const numberSpan = document.createElement("span");
-    numberSpan.className = "font-bold text-5xl text-stone-500 mr-2 select-none tts-ignore";
+    numberSpan.className =
+      "font-bold text-5xl text-stone-400/80 mr-3 select-none tts-ignore float-left leading-none mt-1 mb-1 font-serif";
     numberSpan.textContent = `${labelIndex}.`;
-    element.insertBefore(numberSpan, element.firstChild);
+    targetForNumber.insertBefore(numberSpan, targetForNumber.firstChild);
 
     const anchorBtn = document.createElement("button");
     anchorBtn.className =
-      "group absolute -ml-8 mt-1 p-1 text-stone-400 hover:text-stone-900 transition-colors hidden sm:inline-flex items-center justify-center cursor-pointer";
+      "group absolute top-4 right-4 md:-ml-6 md:top-auto md:right-auto md:left-0 md:mt-2 p-1 text-stone-300 hover:text-stone-900 transition-colors hidden sm:inline-flex items-center justify-center cursor-pointer";
     anchorBtn.setAttribute("aria-label", `Lien vers la section ${labelIndex}`);
     anchorBtn.title = "Copier le lien de cette section";
     anchorBtn.innerHTML = `

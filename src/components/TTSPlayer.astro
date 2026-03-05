@@ -66,10 +66,19 @@ const { title, slug, readingTime } = Astro.props;
         
         container.setAttribute('data-tts-initialized', 'true');
         
-        new TTSController({
-            container: container as HTMLElement,
-            articleContentSelector: '.prose'
-        });
+        const createController = () => {
+          new TTSController({
+              container: container as HTMLElement,
+              articleContentSelector: '.prose'
+          });
+        };
+
+        // If the article is already wrapped (or doesn't need wrapping), init immediately
+        if (document.querySelector('.bento-card') || !document.querySelector('.bento-container')) {
+          createController();
+        } else {
+          window.addEventListener('bento-wrapped', createController, { once: true });
+        }
     });
   }
 

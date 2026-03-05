@@ -53,9 +53,54 @@ if (latestPost) {
               />
             </div>
           </header>
-          <div class="prose prose-stone prose-lg max-w-none mx-auto text-justify prose-headings:font-serif prose-headings:font-bold prose-headings:text-stone-900 prose-p:font-serif prose-p:text-stone-800 prose-a:text-stone-900 prose-a:underline prose-a:decoration-1 hover:prose-a:decoration-2 prose-a:font-normal prose-strong:text-base prose-blockquote:border-l-2 prose-blockquote:border-stone-900 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-stone-700 prose-img:border prose-img:border-stone-900 prose-img:p-1">
+          <div class="prose prose-stone prose-lg max-w-none mx-auto text-justify bento-grid prose-headings:font-serif prose-headings:font-bold prose-headings:text-stone-900 prose-p:font-serif prose-p:text-stone-800 prose-a:text-stone-900 prose-a:underline prose-a:decoration-1 hover:prose-a:decoration-2 prose-a:font-normal prose-strong:text-base prose-blockquote:border-l-2 prose-blockquote:border-stone-900 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-stone-700 prose-img:border prose-img:border-stone-900 prose-img:p-1">
             <Content />
           </div>
+
+          <script is:inline>
+            function wrapBentoSections() {
+              const container = document.querySelector('.bento-grid');
+              if (!container) return;
+              
+              if (container.querySelector('.bento-section')) return;
+
+              const children = Array.from(container.children);
+              let currentSection = document.createElement('section');
+              currentSection.className = 'bento-section';
+              
+              const sections = [];
+              children.forEach(child => {
+                if (child.tagName === 'HR') {
+                  if (currentSection.childNodes.length > 0) {
+                    sections.push(currentSection);
+                  }
+                  currentSection = document.createElement('section');
+                  currentSection.className = 'bento-section';
+                } else {
+                  currentSection.appendChild(child);
+                }
+              });
+              
+              if (currentSection.childNodes.length > 0) {
+                sections.push(currentSection);
+              }
+              
+              container.innerHTML = '';
+              sections.forEach(s => {
+                container.appendChild(s);
+              });
+
+              window.dispatchEvent(new Event('bento-wrapped'));
+            }
+
+            document.addEventListener('astro:page-load', wrapBentoSections);
+            
+            if (document.readyState === 'complete') {
+              wrapBentoSections();
+            } else {
+              document.addEventListener('DOMContentLoaded', wrapBentoSections);
+            }
+          </script>
         </article>
       </>
     ) : (
