@@ -107,7 +107,11 @@
   import { ArticleNavigation } from "../scripts/client/ArticleNavigation";
 
   function init() {
-    new ArticleNavigation();
+    if (document.querySelector('.bento-card') || !document.querySelector('.bento-container')) {
+      new ArticleNavigation();
+    } else {
+      window.addEventListener('bento-wrapped', () => new ArticleNavigation(), { once: true });
+    }
   }
 
   document.addEventListener("astro:page-load", init);
