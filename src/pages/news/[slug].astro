@@ -37,14 +37,14 @@ const audioFileExists = fs.existsSync(path.join(process.cwd(), 'public', 'audio'
 ---
 
 <Layout title={entry.data.title}>
-  <article class="mx-auto max-w-3xl pb-24" data-pagefind-body>
+  <article class="mx-auto max-w-5xl pb-24" data-pagefind-body>
     <header
       class="mb-10 text-center"
     >
       <div
-        class="flex flex-col items-center space-y-2 text-stone-600 font-sans text-sm uppercase tracking-widest pb-8"
+        class="flex flex-col items-center space-y-2 text-stone-600 text-sm uppercase tracking-widest pb-8"
       >
-        <span class="text-2xl font-bold font-sans text-stone-600 uppercase tracking-wides" data-pagefind-meta="title">{formattedDate}</span>
+        <span class="text-2xl font-bold font-serif text-stone-600 uppercase tracking-wides" data-pagefind-meta="title">{formattedDate}</span>
       </div>
       <div class="border-t-4 border-b-4 border-double border-stone-300">
         <TTSPlayer title={entry.data.title} readingTime={readingTime} slug={entry.slug} />
