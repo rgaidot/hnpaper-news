@@ -1,16 +1,16 @@
 ---
 import { getCollection } from 'astro:content';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import TTSPlayer from '../../components/TTSPlayer.astro';
 import AudioPlayer from '../../components/AudioPlayer.astro';
 import Layout from '../../layouts/Layout.astro';
-import fs from 'node:fs';
-import path from 'node:path';
+import { formatFrenchDate } from '../../utils/formatDate';
+import { getReadingTimeMinutes } from '../../utils/readingTime';
+import { hasLocalAudio } from '../../utils/audio';
+import { sortNewsByDateDesc } from '../../utils/news';
 
 export async function getStaticPaths() {
   const newsEntries = await getCollection('news');
-  const sortedNews = newsEntries.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+  const sortedNews = sortNewsByDateDesc(newsEntries);
 
   return sortedNews.map((entry, index) => ({
     params: { slug: entry.slug },
@@ -25,15 +25,11 @@ export async function getStaticPaths() {
 const { entry, nextPost, prevPost } = Astro.props;
 const { Content } = await entry.render();
 
-const formattedDate = format(entry.data.date, 'EEEE d MMMM yyyy à HH:mm', {
-  locale: fr,
-});
+const formattedDate = formatFrenchDate(entry.data.date);
 
-const wordsPerMinute = 200;
-const words = entry.body.trim().split(/\s+/).length;
-const readingTime = Math.ceil(words / wordsPerMinute);
+const readingTime = getReadingTimeMinutes(entry.body);
 
-const audioFileExists = fs.existsSync(path.join(process.cwd(), 'public', 'audio', `${entry.slug}.mp3`));
+const audioFileExists = hasLocalAudio(entry.slug);
 ---
 
 <Layout title={entry.data.title}>
@@ -62,49 +58,10 @@ const audioFileExists = fs.existsSync(path.join(process.cwd(), 'public', 'audio'
       <Content />
     </div>
 
-    <script is:inline>
-      function wrapBentoSections() {
-        const container = document.querySelector('.bento-grid');
-        if (!container) return;
-        
-        if (container.querySelector('.bento-section')) return;
+    <script>
+      import { initBentoSections } from '../../scripts/client/bento';
 
-        const children = Array.from(container.children);
-        let currentSection = document.createElement('section');
-        currentSection.className = 'bento-section';
-        
-        const sections = [];
-        children.forEach(child => {
-          if (child.tagName === 'HR') {
-            if (currentSection.childNodes.length > 0) {
-              sections.push(currentSection);
-            }
-            currentSection = document.createElement('section');
-            currentSection.className = 'bento-section';
-          } else {
-            currentSection.appendChild(child);
-          }
-        });
-        
-        if (currentSection.childNodes.length > 0) {
-          sections.push(currentSection);
-        }
-        
-        container.innerHTML = '';
-        sections.forEach(s => {
-          container.appendChild(s);
-        });
-        
-        window.dispatchEvent(new Event('bento-wrapped'));
-      }
-
-      document.addEventListener('astro:page-load', wrapBentoSections);
-      
-      if (document.readyState === 'complete') {
-        wrapBentoSections();
-      } else {
-        document.addEventListener('DOMContentLoaded', wrapBentoSections);
-      }
+      initBentoSections();
     </script>
 
     <div

@@ -19,13 +19,13 @@ const { title, slug, readingTime } = Astro.props;
     </button>
 
     <div class="flex items-center ml-2 border-l border-stone-200 pl-3">
-      <div class="flex items-center bg-stone-100 rounded-md border border-stone-200 hover:border-stone-300 transition-colors shadow-sm" title="Temps et vitesse de lecture">
+      <div class="flex items-center bg-stone-100 rounded-md border border-stone-200 hover:border-stone-300 transition-colors shadow-sm" title="Temps restant et vitesse de lecture">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 ml-2 mr-1 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         {readingTime && (
           <>
-            <span class="tts-reading-time text-stone-600 text-xs font-medium pl-0.5" data-base-time={readingTime}>{readingTime} min</span>
+            <span class="tts-reading-time text-stone-600 text-xs font-medium pl-0.5" data-base-time={readingTime}>{readingTime} min restantes</span>
             <span class="text-stone-400 text-xs font-medium mx-1">-</span>
           </>
         )}

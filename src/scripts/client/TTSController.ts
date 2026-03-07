@@ -18,7 +18,8 @@ export class TTSController {
   private playPauseBtn: HTMLButtonElement | null;
   private castBtns: HTMLButtonElement[] = [];
   private speedSelect: HTMLSelectElement | null;
-  private readingTimeEl: HTMLElement | null;
+  private readingTimeEls: HTMLElement[] = [];
+  private baseReadingTimeMinutes: number | null = null;
 
   private utterance: SpeechSynthesisUtterance | null = null;
   private audioElement: HTMLAudioElement | null = null;
@@ -70,7 +71,21 @@ export class TTSController {
       this.castBtns.push(globalCastBtn);
 
     this.speedSelect = this.container.querySelector(".tts-speed");
-    this.readingTimeEl = this.container.querySelector(".tts-reading-time");
+    const localReadingTime = this.container.querySelector(".tts-reading-time");
+    if (localReadingTime) this.readingTimeEls.push(localReadingTime);
+    const globalReadingTime = document.querySelector(
+      "#player-container .tts-reading-time",
+    ) as HTMLElement | null;
+    if (globalReadingTime && !this.readingTimeEls.includes(globalReadingTime))
+      this.readingTimeEls.push(globalReadingTime);
+
+    const baseTimeEl = this.readingTimeEls.find(
+      (el) => el.dataset.baseTime !== undefined,
+    );
+    if (baseTimeEl?.dataset.baseTime) {
+      const parsed = parseFloat(baseTimeEl.dataset.baseTime);
+      this.baseReadingTimeMinutes = Number.isFinite(parsed) ? parsed : null;
+    }
     this.titleText = (this.container.getAttribute("data-title") || "") + ". ";
     this.slug = this.container.getAttribute("data-slug") || "";
 
@@ -92,17 +107,20 @@ export class TTSController {
   // ── Init ──────────────────────────────────────────────────────────────────
 
   private init() {
-    if (!this.playPauseBtn || !this.speedSelect) return;
+    const hasControls = !!this.playPauseBtn && !!this.speedSelect;
+    if (!hasControls && !this.audioElement) return;
 
-    this.bindEvents();
+    if (hasControls) this.bindEvents();
     this.initializeCast();
 
     if (this.audioElement) {
       this.bindAudioEvents();
       this.prepareContent(); // synchronous — DOM is already ready
       this.loadVTT(); // async — calls buildCueMappingByText() when done
+      this.resetRemainingTime();
     } else {
       this.prepareContent();
+      this.resetRemainingTime();
     }
 
     window.addEventListener("google-cast-available", () =>
@@ -295,6 +313,10 @@ export class TTSController {
   private bindAudioEvents() {
     if (!this.audioElement) return;
 
+    this.audioElement.addEventListener("loadedmetadata", () => {
+      this.resetRemainingTime();
+    });
+
     this.audioElement.addEventListener("play", () =>
       this.updateState("playing"),
     );
@@ -307,9 +329,9 @@ export class TTSController {
     );
 
     this.audioElement.addEventListener("timeupdate", () => {
-      if (this.vttCues.length === 0) return;
-
       const t = this.audioElement!.currentTime;
+      this.updateRemainingTimeFromAudio();
+      if (this.vttCues.length === 0) return;
 
       // Binary search — faster than findIndex on hundreds of cues
       const found = this.findCueAtTime(t);
@@ -347,6 +369,77 @@ export class TTSController {
       }
     }
     return -1;
+  }
+
+  // ── Remaining time ────────────────────────────────────────────────────────
+
+  private getEffectiveRate(): number {
+    if (this.audioElement) return this.audioElement.playbackRate || 1;
+    return parseFloat(this.speedSelect?.value || "1") || 1;
+  }
+
+  private formatRemainingTime(seconds: number): string {
+    if (!Number.isFinite(seconds) || seconds < 0) seconds = 0;
+    const totalSeconds = Math.max(0, Math.round(seconds));
+    if (totalSeconds < 60) return `${totalSeconds} s`;
+    const totalMinutes = Math.round(totalSeconds / 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    if (hours > 0) {
+      return `${hours} h ${minutes} min`;
+    }
+    return `${minutes} min`;
+  }
+
+  private renderRemainingTime(seconds: number) {
+    if (this.readingTimeEls.length === 0) return;
+    const text = this.formatRemainingTime(seconds);
+    this.readingTimeEls.forEach((el) => {
+      el.textContent = text;
+    });
+  }
+
+  private resetRemainingTime() {
+    if (this.readingTimeEls.length === 0) return;
+    if (this.audioElement && Number.isFinite(this.audioElement.duration)) {
+      const rate = this.getEffectiveRate();
+      this.renderRemainingTime(this.audioElement.duration / rate);
+      return;
+    }
+    if (this.baseReadingTimeMinutes !== null) {
+      const rate = this.getEffectiveRate();
+      this.renderRemainingTime((this.baseReadingTimeMinutes * 60) / rate);
+    }
+  }
+
+  private updateRemainingTime() {
+    if (this.audioElement) {
+      this.updateRemainingTimeFromAudio();
+    } else {
+      this.updateRemainingTimeFromText();
+    }
+  }
+
+  private updateRemainingTimeFromAudio() {
+    if (!this.audioElement) return;
+    if (!Number.isFinite(this.audioElement.duration)) return;
+    const rate = this.getEffectiveRate();
+    const remaining = (this.audioElement.duration - this.audioElement.currentTime) / rate;
+    this.renderRemainingTime(remaining);
+  }
+
+  private updateRemainingTimeFromText() {
+    if (this.baseReadingTimeMinutes === null) return;
+    if (!this.fullText) return;
+    const rate = this.getEffectiveRate();
+    const totalSeconds = (this.baseReadingTimeMinutes * 60) / rate;
+    const progress =
+      this.fullText.length > 0
+        ? Math.min(1, Math.max(0, this.currentCharIndex / this.fullText.length))
+        : 0;
+    const remaining = totalSeconds * (1 - progress);
+    this.renderRemainingTime(remaining);
   }
 
   // ── Cast ──────────────────────────────────────────────────────────────────
@@ -481,6 +574,7 @@ export class TTSController {
       this.audioElement
         .play()
         .catch((e) => console.error("Audio play failed", e));
+      this.updateRemainingTimeFromAudio();
       return;
     }
 
@@ -500,6 +594,7 @@ export class TTSController {
         .play()
         .catch((e) => console.warn("Silent audio failed", e));
     }
+    this.updateRemainingTimeFromText();
     this.speakSentence();
   }
 
@@ -512,6 +607,7 @@ export class TTSController {
       this.audioElement.pause();
       this.updateState("paused");
       this.releaseWakeLock();
+      this.updateRemainingTimeFromAudio();
       return;
     }
     if (this.state === "playing") {
@@ -522,6 +618,7 @@ export class TTSController {
         this.silentAudio.currentTime = 0;
       }
       window.speechSynthesis.cancel();
+      this.updateRemainingTimeFromText();
     }
   }
 
@@ -534,6 +631,7 @@ export class TTSController {
       this.updateState("playing");
       this.requestWakeLock();
       this.audioElement.play();
+      this.updateRemainingTimeFromAudio();
       return;
     }
     if (this.state === "paused") {
@@ -545,6 +643,7 @@ export class TTSController {
           .play()
           .catch((e) => console.warn("Silent audio failed", e));
       }
+      this.updateRemainingTimeFromText();
       this.speakSentence();
     }
   }
@@ -572,6 +671,7 @@ export class TTSController {
     this.clearHighlight();
     this.currentSentenceIndex = 0;
     this.currentCharIndex = 0;
+    this.resetRemainingTime();
   }
 
   private playFromElement(element: HTMLElement) {
@@ -613,6 +713,7 @@ export class TTSController {
         this.audioElement.currentTime = this.vttCues[targetCueIndex].start;
         this.audioElement.play();
         this.updateState("playing");
+        this.updateRemainingTimeFromAudio();
       }
       return;
     }
@@ -627,6 +728,7 @@ export class TTSController {
       this.currentCharIndex = globalIndex;
       window.speechSynthesis.cancel();
       this.updateState("playing");
+      this.updateRemainingTimeFromText();
       this.speakSentence();
     }
   }
@@ -763,8 +865,12 @@ export class TTSController {
     if (frVoice) this.utterance.voice = frVoice;
 
     this.utterance.onboundary = (event) => {
-      if (event.name === "word")
-        this.highlightWord(event.charIndex + this.currentCharIndex);
+      if (event.name === "word") {
+        const globalIndex = sentence.start + localOffset + event.charIndex;
+        this.currentCharIndex = globalIndex;
+        this.highlightWord(globalIndex);
+        this.updateRemainingTimeFromText();
+      }
     };
     this.utterance.onend = () => {
       if (this.state === "playing") {
@@ -818,11 +924,6 @@ export class TTSController {
 
   private updateSpeed() {
     const newRate = parseFloat(this.speedSelect?.value || "1");
-    if (this.readingTimeEl?.dataset.baseTime) {
-      this.readingTimeEl.textContent = `${Math.ceil(
-        parseFloat(this.readingTimeEl.dataset.baseTime) / newRate,
-      )} min`;
-    }
     window.dispatchEvent(
       new CustomEvent("tts:speed-changed", { detail: { speed: newRate } }),
     );
@@ -831,6 +932,7 @@ export class TTSController {
       window.speechSynthesis.cancel();
       this.speakSentence();
     }
+    this.updateRemainingTime();
   }
 
   private setupMediaSession() {
