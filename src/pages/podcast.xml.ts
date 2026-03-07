@@ -1,17 +1,18 @@
 import rss from '@astrojs/rss';
 import { getCollection } from 'astro:content';
 import fs from 'node:fs';
-import path from 'node:path';
 import { marked } from 'marked';
+import { formatFrenchDateShort } from '../utils/formatDate';
+import { getAudioPath, getAudioUrl } from '../utils/audio';
+import { sortNewsByDateDesc } from '../utils/news';
 
 export const GET = async (context) => {
   const news = await getCollection('news');
-  const sortedNews = news.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+  const sortedNews = sortNewsByDateDesc(news);
 
   const items = await Promise.all(sortedNews.map(async (post) => {
-    const audioFilename = `${post.slug}.mp3`;
-    const audioPath = path.join(process.cwd(), 'public', 'audio', audioFilename);
-    const audioUrl = `${context.site}audio/${audioFilename}`;
+    const audioPath = getAudioPath(post.slug);
+    const audioUrl = getAudioUrl(context.site, post.slug);
 
     if (!fs.existsSync(audioPath)) {
       return null;
@@ -23,7 +24,7 @@ export const GET = async (context) => {
     return {
       title: post.data.title,
       pubDate: post.data.date,
-      description: `Actualités du ${post.data.date.toLocaleDateString('fr-FR')}`,
+      description: `Actualités du ${formatFrenchDateShort(post.data.date)}`,
       link: `/news/${post.slug}/`,
       enclosure: {
         url: audioUrl,

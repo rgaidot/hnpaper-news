@@ -1,19 +1,17 @@
 ---
 import { getCollection } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
+import { formatFrenchDateShort } from '../../utils/formatDate';
+import { formatReadingTimeMinutes, getReadingTimeMinutes } from '../../utils/readingTime';
+import { sortNewsByDateDesc } from '../../utils/news';
 
 export async function getStaticPaths({ paginate }) {
   const allNews = await getCollection('news');
-  const sortedNews = allNews.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+  const sortedNews = sortNewsByDateDesc(allNews);
   return paginate(sortedNews, { pageSize: 12 });
 }
 
 const { page } = Astro.props;
-
-const getReadingTime = (body: string) => {
-  const words = body.trim().split(/\s+/).length;
-  return Math.ceil(words / 200);
-};
 ---
 
 <Layout title={`Archives - Page ${page.currentPage}`}>
@@ -29,19 +27,15 @@ const getReadingTime = (body: string) => {
     >
   </div>
 
-  <div class="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6 w-full">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
     {
       page.data.map((post) => (
         <article class="break-inside-avoid w-full flex flex-col bg-white p-6 md:p-8 rounded-[1rem] shadow-sm border border-stone-200/80 hover:shadow-md hover:border-stone-300 transition-all text-left">
           <div class="mb-4 text-xs font-bold tracking-widest text-stone-500 uppercase border-b border-stone-100 pb-2 flex justify-between w-full">
             <span>
-              {new Date(post.data.date).toLocaleDateString("fr-FR", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
+              {formatFrenchDateShort(post.data.date)}
             </span>
-            <span>{getReadingTime(post.body)} min</span>
+            <span>{formatReadingTimeMinutes(getReadingTimeMinutes(post.body))}</span>
           </div>
 
           <p class="text-stone-700 font-serif text-base lg:text-lg leading-relaxed mb-6 flex-grow line-clamp-6 text-justify">

@@ -1,11 +1,9 @@
 ---
 import { getCollection } from 'astro:content';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import LayoutPlayer from '../../layouts/LayoutPlayer.astro';
-import TTSPlayer from '../../components/TTSPlayer.astro';
 import AudioPlayer from '../../components/AudioPlayer.astro';
 import VoiceVisualizer from '../../components/VoiceVisualizer.astro';
+import { formatFrenchDate } from '../../utils/formatDate';
 
 export async function getStaticPaths() {
   const newsEntries = await getCollection('news');
@@ -16,15 +14,8 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { Content } = await entry.render();
 
-const formattedDate = format(entry.data.date, 'EEEE d MMMM yyyy à HH:mm', {
-  locale: fr,
-});
-
-const wordsPerMinute = 200;
-const words = entry.body.trim().split(/\s+/).length;
-const readingTime = Math.ceil(words / wordsPerMinute);
+const formattedDate = formatFrenchDate(entry.data.date);
 ---
 <LayoutPlayer title={`Lecture : ${entry.data.title}`}>
   <AudioPlayer title={entry.data.title} slug={entry.slug} formattedDate={formattedDate} />
