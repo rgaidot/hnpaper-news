@@ -1,18 +1,16 @@
 ---
 import { getCollection } from "astro:content";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
 import TTSPlayer from "../components/TTSPlayer.astro";
 import AudioPlayer from "../components/AudioPlayer.astro";
 import Layout from "../layouts/Layout.astro";
-import fs from 'node:fs';
-import path from 'node:path';
+import { formatFrenchDate } from "../utils/formatDate";
+import { getReadingTimeMinutes } from "../utils/readingTime";
+import { hasLocalAudio } from "../utils/audio";
+import { getLatestNews, sortNewsByDateDesc } from "../utils/news";
 
 const allNews = await getCollection("news");
-const sortedNews = allNews.sort(
-  (a, b) => b.data.date.getTime() - a.data.date.getTime()
-);
-const latestPost = sortedNews[0];
+const sortedNews = sortNewsByDateDesc(allNews);
+const latestPost = getLatestNews(sortedNews);
 
 let Content, formattedDate, readingTime, audioFileExists;
 
@@ -20,15 +18,11 @@ if (latestPost) {
   const rendered = await latestPost.render();
   Content = rendered.Content;
 
-  formattedDate = format(latestPost.data.date, "EEEE d MMMM yyyy à HH:mm", {
-    locale: fr,
-  });
+  formattedDate = formatFrenchDate(latestPost.data.date);
 
-  const wordsPerMinute = 200;
-  const words = latestPost.body.trim().split(/\s+/).length;
-  readingTime = Math.ceil(words / wordsPerMinute);
+  readingTime = getReadingTimeMinutes(latestPost.body);
 
-  audioFileExists = fs.existsSync(path.join(process.cwd(), 'public', 'audio', `${latestPost.slug}.mp3`));
+  audioFileExists = hasLocalAudio(latestPost.slug);
 }
 ---
 
@@ -57,49 +51,10 @@ if (latestPost) {
             <Content />
           </div>
 
-          <script is:inline>
-            function wrapBentoSections() {
-              const container = document.querySelector('.bento-grid');
-              if (!container) return;
-              
-              if (container.querySelector('.bento-section')) return;
+          <script>
+            import { initBentoSections } from "../scripts/client/bento";
 
-              const children = Array.from(container.children);
-              let currentSection = document.createElement('section');
-              currentSection.className = 'bento-section';
-              
-              const sections = [];
-              children.forEach(child => {
-                if (child.tagName === 'HR') {
-                  if (currentSection.childNodes.length > 0) {
-                    sections.push(currentSection);
-                  }
-                  currentSection = document.createElement('section');
-                  currentSection.className = 'bento-section';
-                } else {
-                  currentSection.appendChild(child);
-                }
-              });
-              
-              if (currentSection.childNodes.length > 0) {
-                sections.push(currentSection);
-              }
-              
-              container.innerHTML = '';
-              sections.forEach(s => {
-                container.appendChild(s);
-              });
-
-              window.dispatchEvent(new Event('bento-wrapped'));
-            }
-
-            document.addEventListener('astro:page-load', wrapBentoSections);
-            
-            if (document.readyState === 'complete') {
-              wrapBentoSections();
-            } else {
-              document.addEventListener('DOMContentLoaded', wrapBentoSections);
-            }
+            initBentoSections();
           </script>
         </article>
       </>
