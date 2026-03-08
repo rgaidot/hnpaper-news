@@ -29,7 +29,22 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // Avoid caching HTML so new news pages show up immediately.
+        globPatterns: ['**/*.{js,css,ico,png,svg}'],
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'html-pages',
+              networkTimeoutSeconds: 3,
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60, // 1 hour
+              },
+            },
+          },
+        ],
         navigateFallback: null,
       },
     }),
