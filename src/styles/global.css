@@ -1,16 +1,22 @@
+@import url("https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&family=Playfair+Display:opsz,wght@5..1200,700;900&family=Source+Serif+4:wght@400;600;700&family=UnifrakturCook:wght@700&display=swap");
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
 @theme {
-  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-serif: "Source Serif 4", Georgia, "Times New Roman", Times, serif;
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    "Libre Franklin", system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-headline: "Playfair Display", "Source Serif 4", Georgia, serif;
+  --font-masthead: "UnifrakturCook", "Playfair Display", Georgia, serif;
 }
 
 body {
-  @apply bg-[#f9f7f1] text-stone-900 antialiased;
+  @apply text-stone-900 antialiased;
+  font-family: var(--font-serif);
+  background-color: #f8f7f3;
+  background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.02), transparent 30%);
 }
 
 h1,
@@ -19,7 +25,8 @@ h3,
 h4,
 h5,
 h6 {
-  @apply font-serif;
+  font-family: var(--font-headline);
+  letter-spacing: -0.01em;
 }
 
 @layer base {
@@ -29,6 +36,19 @@ h6 {
   }
 }
 
+.prose :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-headline);
+}
+
+.font-masthead {
+  font-family: var(--font-masthead);
+  letter-spacing: 0;
+}
+
+.font-headline {
+  font-family: var(--font-headline);
+}
+
 .tts-word {
   border-radius: 2px;
   transition: all 0.15s ease;
@@ -36,55 +56,57 @@ h6 {
 }
 
 .tts-word:hover {
-  background-color: oklch(93.8% 0.127 124.321);
+  background-color: #f1ede3;
 }
 
 .tts-active {
-  background-color: oklch(93.8% 0.127 124.321);
-  border-bottom: 2px solid oklch(76.8% 0.233 130.85);
+  background-color: #f1ede3;
+  border-bottom: 2px solid #c9bda7;
   color: #1c1917;
   padding: 1px 2px;
 }
 
 .tts-button-style {
-  background-color: oklch(93.8% 0.127 124.321);
-  border-bottom: 2px solid oklch(76.8% 0.233 130.85);
+  background-color: #f1ede3;
+  border-bottom: 2px solid #c9bda7;
   color: #1c1917;
   cursor: pointer;
 }
 
 .tts-button-style:hover {
-  background-color: oklch(88% 0.127 124.321);
+  background-color: #e8e0d2;
 }
 
 .bento-grid {
-  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6;
-  grid-auto-flow: dense;
+  column-gap: 2.25rem;
+  columns: 1;
+}
+
+@media (min-width: 768px) {
+  .bento-grid {
+    columns: 2;
+  }
+}
+
+@media (min-width: 1024px) {
+  .bento-grid {
+    columns: 3;
+  }
 }
 
 .bento-section {
-  @apply bg-white p-6 md:p-8 rounded-[1rem] shadow-sm border border-stone-200/80 flex flex-col transition-all duration-300 hover:shadow-md hover:border-stone-300 relative overflow-hidden;
+  break-inside: avoid;
+  padding: 1.5rem 0 2rem;
+  border-top: 1px solid #e4e2da;
 }
 
-/* Varied widths for a true bento feel - more random distribution */
-.bento-section:nth-child(3n + 1) {
-  @apply md:col-span-2 lg:col-span-1;
-}
-
-.bento-section:nth-child(4n + 2) {
-  @apply md:col-span-1 lg:col-span-2;
-}
-
-.bento-section:nth-child(5n + 3) {
-  @apply md:col-span-2 lg:col-span-2;
-}
-
-.bento-section:nth-child(7n + 1) {
-  @apply md:col-span-2 lg:col-span-3;
+.bento-section:first-child {
+  border-top: none;
+  padding-top: 0;
 }
 
 .bento-section h2 {
-  @apply !mt-0 !mb-4 text-2xl md:text-3xl font-bold font-serif text-stone-900 leading-tight;
+  @apply !mt-0 !mb-4 text-2xl md:text-3xl font-bold text-stone-900 leading-tight;
 }
 
 .bento-section p {
@@ -101,7 +123,7 @@ h6 {
 }
 
 .bento-section blockquote {
-  @apply my-6 border-l-4 border-stone-300 pl-6 italic text-stone-700 bg-stone-100/50 p-6 rounded-2xl;
+  @apply my-6 border-l-2 border-stone-300 pl-5 italic text-stone-700 bg-transparent;
 }
 
 .bento-section a {

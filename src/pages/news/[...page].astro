@@ -15,23 +15,23 @@ const { page } = Astro.props;
 ---
 
 <Layout title={`Archives - Page ${page.currentPage}`}>
-  <div class="mb-12 border-b-4 border-double border-stone-300 pb-4 text-center">
+  <div class="mb-12 border-b border-stone-300 pb-4 text-center">
     <h2
-      class="text-2xl font-bold font-serif text-stone-600 uppercase tracking-wides"
+      class="text-2xl font-bold text-stone-700 uppercase tracking-wider"
     >
       Archives
     </h2>
     <span
-      class="text-xs font-sans font-bold uppercase tracking-widest text-stone-500 mt-2 block"
+      class="text-[11px] font-sans font-semibold uppercase tracking-[0.25em] text-stone-500 mt-2 block"
       >Page {page.currentPage} sur {page.lastPage}</span
     >
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
     {
       page.data.map((post) => (
-        <article class="break-inside-avoid w-full flex flex-col bg-white p-6 md:p-8 rounded-[1rem] shadow-sm border border-stone-200/80 hover:shadow-md hover:border-stone-300 transition-all text-left">
-          <div class="mb-4 text-xs font-bold tracking-widest text-stone-500 uppercase border-b border-stone-100 pb-2 flex justify-between w-full">
+        <article class="break-inside-avoid w-full flex flex-col text-left border-t border-stone-200 pt-6">
+          <div class="mb-4 text-[11px] font-semibold tracking-[0.25em] text-stone-500 uppercase border-b border-stone-100 pb-2 flex justify-between w-full font-sans">
             <span>
               {formatFrenchDateShort(post.data.date)}
             </span>
@@ -42,7 +42,7 @@ const { page } = Astro.props;
             {post.body.split("---")[0]?.replace(/^#+\s/, "")}
           </p>
 
-          <ul class="mt-auto pt-6 border-t border-stone-100 text-sm font-sans font-bold tracking-wider text-stone-500 !mb-0 list-none pl-0">
+          <ul class="mt-auto pt-4 border-t border-stone-100 text-sm font-sans font-semibold tracking-wider text-stone-500 !mb-0 list-none pl-0">
             <li>
               <a
                 href={`/news/${post.slug}`}
@@ -58,24 +58,24 @@ const { page } = Astro.props;
   </div>
 
   <nav
-    class="flex justify-center items-center space-x-4 mt-16 font-serif pt-8 border-t border-stone-300"
+    class="flex justify-center items-center space-x-4 mt-16 font-sans pt-8 border-t border-stone-300"
   >
     {
       page.url.prev ? (
         <a
           href={page.url.prev}
-          class="px-6 py-2 border border-stone-900 text-stone-900 font-bold hover:bg-stone-900 hover:text-white transition-colors uppercase text-sm tracking-widest"
+          class="px-6 py-2 border border-stone-900 text-stone-900 font-semibold hover:bg-stone-900 hover:text-white transition-colors uppercase text-[11px] tracking-[0.25em]"
         >
           &larr; Précédent
         </a>
       ) : (
-        <span class="px-6 py-2 border border-stone-200 text-stone-300 uppercase text-sm tracking-widest cursor-not-allowed">
+        <span class="px-6 py-2 border border-stone-200 text-stone-300 uppercase text-[11px] tracking-[0.25em] cursor-not-allowed">
           &larr; Précédent
         </span>
       )
     }
 
-    <div class="hidden sm:flex px-4 font-bold text-stone-900">
+    <div class="hidden sm:flex px-4 font-semibold text-stone-900">
       Page {page.currentPage}
     </div>
 
@@ -83,12 +83,12 @@ const { page } = Astro.props;
       page.url.next ? (
         <a
           href={page.url.next}
-          class="px-6 py-2 border border-stone-900 text-stone-900 font-bold hover:bg-stone-900 hover:text-white transition-colors uppercase text-sm tracking-widest"
+          class="px-6 py-2 border border-stone-900 text-stone-900 font-semibold hover:bg-stone-900 hover:text-white transition-colors uppercase text-[11px] tracking-[0.25em]"
         >
           Suivant &rarr;
         </a>
       ) : (
-        <span class="px-6 py-2 border border-stone-200 text-stone-300 uppercase text-sm tracking-widest cursor-not-allowed">
+        <span class="px-6 py-2 border border-stone-200 text-stone-300 uppercase text-[11px] tracking-[0.25em] cursor-not-allowed">
           Suivant &rarr;
         </span>
       )

@@ -36,10 +36,10 @@ const { title } = Astro.props;
     <title>{title}</title>
   </head>
   <body class="flex flex-col min-h-screen">
-    <header class="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-6 text-center">
-      <div class="border-b-4 border-stone-900 pb-2 mb-2">
+    <header class="w-full max-w-5xl mx-auto px-4 sm:px-6 pt-8 pb-6 text-center">
+      <div class="border-b-2 border-stone-900 pb-3 mb-2">
         <h1
-          class="font-serif text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter text-stone-900 uppercase leading-none"
+          class="font-masthead text-5xl sm:text-7xl md:text-8xl text-stone-950 leading-none"
         >
           <a href="/" class="hover:text-stone-700 transition-colors"
             >The HNPaper</a
@@ -47,7 +47,7 @@ const { title } = Astro.props;
         </h1>
       </div>
       <div
-        class="border-b border-stone-900 border-t border-stone-900 py-2 flex justify-between items-center font-serif font-bold text-xs sm:text-sm uppercase tracking-widest text-stone-800"
+        class="border-b border-stone-900 border-t border-stone-900 py-2 flex flex-col sm:flex-row justify-between items-center gap-2 font-sans text-[11px] sm:text-xs uppercase tracking-[0.25em] text-stone-700"
       >
         <span
           >{formatFrenchDateLong(new Date())}</span
@@ -59,12 +59,12 @@ const { title } = Astro.props;
       </div>
     </header>
 
-    <main class="w-full max-w-6xl mx-auto px-4 sm:px-6 py-8">
+    <main class="w-full max-w-5xl mx-auto px-4 sm:px-6 py-8">
       <slot />
     </main>
 
     <footer
-      class="w-full max-w-6xl mx-auto px-4 sm:px-6 py-8 mt-12 border-t-4 border-stone-900"
+      class="w-full max-w-5xl mx-auto px-4 sm:px-6 py-8 mt-12 border-t-2 border-stone-900"
     >
       <div class="text-center font-serif text-sm text-stone-600">
         <p class="mb-2">
