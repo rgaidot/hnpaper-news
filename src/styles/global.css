@@ -58,8 +58,17 @@ h6 {
 }
 
 .bento-grid {
-  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6;
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 items-start;
   grid-auto-flow: dense;
+  grid-auto-rows: 1px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+}
+
+.bento-grid.bento-loaded {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .bento-section {
