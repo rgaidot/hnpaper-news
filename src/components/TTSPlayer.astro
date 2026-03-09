@@ -74,7 +74,7 @@ const { title, slug, readingTime } = Astro.props;
         };
 
         // If the article is already wrapped (or doesn't need wrapping), init immediately
-        if (document.querySelector('.bento-card') || !document.querySelector('.bento-container')) {
+        if (document.querySelector('.bento-section') || !document.querySelector('.bento-grid')) {
           createController();
         } else {
           window.addEventListener('bento-wrapped', createController, { once: true });

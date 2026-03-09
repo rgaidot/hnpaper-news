@@ -99,7 +99,7 @@
           <div class="flex justify-center">
             <kbd class="bg-stone-600 px-2 py-1 rounded text-center font-mono text-white shadow-sm border-b border-stone-900 text-[10px]">Espace</kbd>
           </div>
-          <span class="text-[12px]">Lecture</span>
+          <span class="text-[12px]">Lecture/Pause</span>
         </div>
         <div class="absolute -bottom-1 right-1.5 w-2 h-2 bg-stone-800 transform rotate-45 border-b border-r border-stone-700" />
       </div>
@@ -111,7 +111,7 @@
   import { ArticleNavigation } from "../scripts/client/ArticleNavigation";
 
   function init() {
-    if (document.querySelector('.bento-card') || !document.querySelector('.bento-container')) {
+    if (document.querySelector('.bento-section') || !document.querySelector('.bento-grid')) {
       new ArticleNavigation();
     } else {
       window.addEventListener('bento-wrapped', () => new ArticleNavigation(), { once: true });
