@@ -60,7 +60,7 @@ export class ArticleNavigation {
 
   private scanSections() {
     const article =
-      document.querySelector(".bento-container") ||
+      document.querySelector(".bento-grid") ||
       (document.querySelector(".prose") as HTMLElement);
     if (!article) return;
 
@@ -68,7 +68,7 @@ export class ArticleNavigation {
 
     // Check for bento sections first
     const bentoSections = Array.from(
-      article.querySelectorAll(".bento-card"),
+      article.querySelectorAll(".bento-section"),
     ) as HTMLElement[];
 
     if (bentoSections.length > 0) {
@@ -122,7 +122,7 @@ export class ArticleNavigation {
     }
 
     let targetForNumber = element;
-    if (element.classList.contains("bento-card")) {
+    if (element.classList.contains("bento-section")) {
       targetForNumber =
         (element.querySelector("p, h2, h3, h4, h5, h6") as HTMLElement) ||
         element;

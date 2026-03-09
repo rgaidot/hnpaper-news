@@ -30,20 +30,23 @@ h6 {
 }
 
 .tts-word {
-  border-radius: 2px;
-  transition: all 0.15s ease;
+  border-radius: 4px;
+  padding: 2px 2px;
+  margin: 0 -2px;
+  transition: background-color 0.15s ease, color 0.15s ease;
   cursor: pointer;
 }
 
 .tts-word:hover {
+  border-radius: 4px;
   background-color: oklch(93.8% 0.127 124.321);
 }
 
 .tts-active {
+  @apply font-semibold text-xl; 
   background-color: oklch(93.8% 0.127 124.321);
-  border-bottom: 2px solid oklch(76.8% 0.233 130.85);
+  padding: 4px 8px;
   color: #1c1917;
-  padding: 1px 2px;
 }
 
 .tts-button-style {
@@ -58,8 +61,17 @@ h6 {
 }
 
 .bento-grid {
-  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6;
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 items-start;
   grid-auto-flow: dense;
+  grid-auto-rows: 1px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+}
+
+.bento-grid.bento-loaded {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .bento-section {
