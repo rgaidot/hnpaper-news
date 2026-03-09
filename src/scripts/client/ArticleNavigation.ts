@@ -1,5 +1,4 @@
 interface Section {
-  top: number;
   element: HTMLElement;
 }
 
@@ -16,8 +15,18 @@ export class ArticleNavigation {
   private playIcon: HTMLElement | null;
   private pauseIcon: HTMLElement | null;
   private speedBtn: HTMLElement | null;
+  private isNavigating = false;
+  private navigateTimeout: number | null = null;
+  private observer: IntersectionObserver | null = null;
+  private abortController: AbortController;
 
   constructor() {
+    if ((window as any)._articleNavigationInstance) {
+      (window as any)._articleNavigationInstance.destroy();
+    }
+    (window as any)._articleNavigationInstance = this;
+    this.abortController = new AbortController();
+
     this.navContainer = document.getElementById("article-nav");
     this.prevBtn = document.getElementById(
       "prev-section-btn",
@@ -65,7 +74,6 @@ export class ArticleNavigation {
     if (bentoSections.length > 0) {
       bentoSections.forEach((section, index) => {
         this.sections.push({
-          top: section.getBoundingClientRect().top + window.scrollY,
           element: section,
         });
       });
@@ -75,7 +83,6 @@ export class ArticleNavigation {
 
       if (article.firstElementChild) {
         this.sections.push({
-          top: article.getBoundingClientRect().top + window.scrollY,
           element: article.firstElementChild as HTMLElement,
         });
       }
@@ -87,7 +94,6 @@ export class ArticleNavigation {
         }
         if (nextEl) {
           this.sections.push({
-            top: hr.getBoundingClientRect().top + window.scrollY,
             element: nextEl as HTMLElement,
           });
         }
@@ -160,6 +166,8 @@ export class ArticleNavigation {
   }
 
   private bindEvents() {
+    const signal = { signal: this.abortController.signal };
+
     this.prevBtn?.addEventListener("click", () => this.navigate(-1));
     this.nextBtn?.addEventListener("click", () => this.navigate(1));
     this.scrollTopBtn?.addEventListener("click", () => {
@@ -182,15 +190,15 @@ export class ArticleNavigation {
       }
     });
 
-    window.addEventListener("tts:cmd:nav-next", () => this.navigate(1));
-    window.addEventListener("tts:cmd:nav-prev", () => this.navigate(-1));
+    window.addEventListener("tts:cmd:nav-next", () => this.navigate(1), signal);
+    window.addEventListener("tts:cmd:nav-prev", () => this.navigate(-1), signal);
 
     window.addEventListener("tts:speed-changed", (e: Event) => {
       const ce = e as CustomEvent;
       if (this.speedBtn && ce.detail) {
         this.speedBtn.textContent = `${ce.detail.speed}x`;
       }
-    });
+    }, signal);
 
     this.speedBtn?.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -216,7 +224,7 @@ export class ArticleNavigation {
         this.playIcon?.classList.remove("hidden");
         this.pauseIcon?.classList.add("hidden");
       }
-    });
+    }, signal);
 
     document.addEventListener("keydown", (e) => {
       if (e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) return;
@@ -231,12 +239,47 @@ export class ArticleNavigation {
         e.preventDefault();
         window.dispatchEvent(new Event("tts:cmd:toggle"));
       }
-    });
+    }, signal);
+
+    document.addEventListener("click", (e) => {
+      const target = e.target as HTMLElement;
+      if (target.classList.contains("tts-word")) {
+        const sectionEl = target.closest('[id^="section-"]');
+        if (sectionEl && sectionEl.id) {
+          const match = sectionEl.id.match(/^section-(\d+)$/);
+          if (match) {
+            const index = parseInt(match[1], 10) - 1;
+            this.updateActiveIndex(index);
+            history.pushState(null, '', `#${sectionEl.id}`);
+          }
+        }
+      }
+    }, signal);
+  }
+
+  private updateActiveIndex(newIndex: number) {
+    if (newIndex !== this.activeIndex) {
+      this.activeIndex = newIndex;
+      if (this.currentSpan) {
+        this.currentSpan.textContent = (this.activeIndex + 1).toString();
+      }
+      if (this.prevBtn) this.prevBtn.disabled = this.activeIndex <= 0;
+      if (this.nextBtn) this.nextBtn.disabled = this.activeIndex >= this.sections.length - 1;
+    }
   }
 
   private navigate(dir: number) {
     const targetIndex = this.activeIndex + dir;
+
     if (targetIndex >= 0 && targetIndex < this.sections.length) {
+      // Bloquer temporairement le scroll spy pendant la navigation fluide
+      this.isNavigating = true;
+      if (this.navigateTimeout) clearTimeout(this.navigateTimeout);
+      this.navigateTimeout = window.setTimeout(() => {
+        this.isNavigating = false;
+      }, 1000) as unknown as number;
+
+      this.updateActiveIndex(targetIndex);
       this.scrollToSection(targetIndex);
 
       const isPlaying = !this.pauseIcon?.classList.contains("hidden");
@@ -252,51 +295,51 @@ export class ArticleNavigation {
   }
 
   private setupScrollSpy() {
-    const onScroll = () => {
-      const scrollY = window.scrollY;
-      const offset = 200;
-
-      let newIndex = 0;
-      for (let i = 0; i < this.sections.length; i++) {
-        const elTop = this.sections[i].element
-          ? this.sections[i].element.getBoundingClientRect().top +
-            window.scrollY
-          : this.sections[i].top;
-
-        if (scrollY >= elTop - offset) {
-          newIndex = i;
-        } else {
-          break;
-        }
-      }
-
-      if (
-        window.innerHeight + window.scrollY >=
-        document.body.offsetHeight - 50
-      ) {
-        newIndex = this.sections.length - 1;
-      }
-
-      if (newIndex !== this.activeIndex) {
-        this.activeIndex = newIndex;
-        if (this.currentSpan)
-          this.currentSpan.textContent = (this.activeIndex + 1).toString();
-
-        if (this.prevBtn) this.prevBtn.disabled = this.activeIndex <= 0;
-        if (this.nextBtn)
-          this.nextBtn.disabled = this.activeIndex >= this.sections.length - 1;
-      }
+    const options = {
+      root: null,
+      rootMargin: "-10% 0px -80% 0px",
+      threshold: 0
     };
 
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
+    let visibleSections: number[] = [];
+
+    this.observer = new IntersectionObserver((entries) => {
+      if (this.isNavigating) return;
+
+      entries.forEach(entry => {
+        const idMatch = entry.target.id.match(/^section-(\d+)$/);
+        if (idMatch) {
+          const index = parseInt(idMatch[1], 10) - 1;
+          if (entry.isIntersecting) {
+            if (!visibleSections.includes(index)) {
+              visibleSections.push(index);
+            }
+          } else {
+            visibleSections = visibleSections.filter(i => i !== index);
+          }
+        }
+      });
+
+      if (visibleSections.length > 0) {
+        visibleSections.sort((a, b) => a - b);
+        this.updateActiveIndex(visibleSections[0]);
+      }
+    }, options);
+
+    this.sections.forEach(section => {
+      if (section.element) {
+        this.observer?.observe(section.element);
+      }
+    });
   }
 
   private scrollToSection(index: number) {
     if (index < 0 || index >= this.sections.length) return;
-    const target = this.sections[index].element;
+    const targetId = `section-${index + 1}`;
+    const target = document.getElementById(targetId);
+    
     if (target) {
-      const headerOffset = 20;
+      const headerOffset = 60;
       const elementPosition = target.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.scrollY - headerOffset;
 
@@ -304,6 +347,8 @@ export class ArticleNavigation {
         top: offsetPosition,
         behavior: "smooth",
       });
+      
+      history.pushState(null, '', `#${targetId}`);
     }
   }
 
@@ -315,6 +360,17 @@ export class ArticleNavigation {
         const index = parseInt(match[1], 10) - 1;
         setTimeout(() => this.scrollToSection(index), 100);
       }
+    }
+  }
+
+  public destroy() {
+    this.abortController.abort();
+    if (this.observer) {
+      this.observer.disconnect();
+      this.observer = null;
+    }
+    if (this.navigateTimeout) {
+      clearTimeout(this.navigateTimeout);
     }
   }
 }
