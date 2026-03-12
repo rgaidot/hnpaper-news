@@ -2,6 +2,7 @@
 import { getCollection } from "astro:content";
 import TTSPlayer from "../components/TTSPlayer.astro";
 import AudioPlayer from "../components/AudioPlayer.astro";
+import TagList from "../components/TagList.astro";
 import Layout from "../layouts/Layout.astro";
 import { formatFrenchDate } from "../utils/formatDate";
 import { getReadingTimeMinutes } from "../utils/readingTime";
@@ -38,6 +39,7 @@ if (latestPost) {
               class="flex flex-col items-center space-y-2 text-stone-600 font-serif text-sm uppercase tracking-widest pb-8"
             >
               <span class="text-2xl font-bold font-serif text-stone-600 uppercase tracking-wides" data-pagefind-meta="title">{formattedDate}</span>
+              <TagList tags={latestPost.data.tags} centered={true} />
             </div>
             <div class="border-t-4 border-b-4 border-double border-stone-300">
               <TTSPlayer
