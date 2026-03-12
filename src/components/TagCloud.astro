@@ -1,0 +1,40 @@
+---
+import { getCollection } from "astro:content";
+
+const allNews = await getCollection("news");
+const tagCounts: Record<string, number> = {};
+
+allNews.forEach(post => {
+  post.data.tags?.forEach(tag => {
+    tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+  });
+});
+
+const maxCount = Math.max(...Object.values(tagCounts), 1);
+const minCount = Math.min(...Object.values(tagCounts), 1);
+
+const getFontSize = (count: number) => {
+  const minSize = 0.8; // rem
+  const maxSize = 2.2; // rem
+  if (maxCount === minCount) return `${minSize}rem`;
+  return `${minSize + ((count - minCount) / (maxCount - minCount)) * (maxSize - minSize)}rem`;
+};
+
+// Sort tags alphabetically
+const tags = Object.entries(tagCounts).sort((a, b) => a[0].localeCompare(b[0]));
+---
+
+<div class="mb-12">
+  <div class="flex flex-wrap justify-center items-center gap-x-4 gap-y-3 max-w-4xl mx-auto">
+    {tags.map(([tag, count]) => (
+      <a 
+        href={`/tags/${encodeURIComponent(tag)}`}
+        class="text-stone-600 hover:text-stone-900 transition-colors hover:underline decoration-1"
+        style={`font-size: ${getFontSize(count)}; line-height: 1.2;`}
+        title={`${count} article${count > 1 ? 's' : ''}`}
+      >
+        #{tag}
+      </a>
+    ))}
+  </div>
+</div>
