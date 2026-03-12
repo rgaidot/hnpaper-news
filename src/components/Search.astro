@@ -30,6 +30,7 @@
   let pagefind;
   let currentResults = [];
   let visibleCount = 5;
+  let currentQuery = "";
 
   async function loadPagefind() {
     if (pagefind) return;
@@ -49,8 +50,15 @@
     for (const result of slicedResults) {
       const data = await result.data();
       const date = data.meta.title || data.url.split('/').pop().replace(/-/g, ' ');
+      
+      // Add a text fragment anchor to scroll directly to the matched term
+      let targetUrl = data.url;
+      if (currentQuery && !targetUrl.includes('#')) {
+        targetUrl += `#:~:text=${encodeURIComponent(currentQuery)}`;
+      }
+      
       resultsHtml += `
-        <a href="${data.url}" class="block p-2 hover:bg-stone-100 border-b border-stone-200 last:border-b-0 text-left">
+        <a href="${targetUrl}" class="block p-2 hover:bg-stone-100 border-b border-stone-200 last:border-b-0 text-left">
           <h3 class="font-bold text-stone-900 text-base">${date}</h3>
           <p class="text-sm text-stone-700 normal-case">${data.excerpt}</p>
         </a>
@@ -79,6 +87,7 @@
 
   searchInput.addEventListener("input", async (event) => {
     const query = event.target.value;
+    currentQuery = query;
     if (query.length > 0) {
       clearSearchBtn.classList.remove("hidden");
     } else {
@@ -109,6 +118,7 @@
 
   clearSearchBtn.addEventListener("click", () => {
     searchInput.value = "";
+    currentQuery = "";
     searchResults.innerHTML = "";
     searchResults.classList.add("hidden");
     clearSearchBtn.classList.add("hidden");
