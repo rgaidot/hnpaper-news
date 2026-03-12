@@ -272,7 +272,7 @@ export class ArticleNavigation {
     const targetIndex = this.activeIndex + dir;
 
     if (targetIndex >= 0 && targetIndex < this.sections.length) {
-      // Bloquer temporairement le scroll spy pendant la navigation fluide
+      // Disable scroll spy during smooth navigation
       this.isNavigating = true;
       if (this.navigateTimeout) clearTimeout(this.navigateTimeout);
       this.navigateTimeout = window.setTimeout(() => {
