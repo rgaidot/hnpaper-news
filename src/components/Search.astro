@@ -95,7 +95,7 @@
     searchResults.innerHTML = '<p class="text-stone-600 italic p-2">Recherche en cours...</p>';
 
     await loadPagefind();
-    const search = await pagefind.search(query);
+    const search = await pagefind.search(query, { sort: { date: "desc" } });
     
     currentResults = search.results;
     visibleCount = 5;
