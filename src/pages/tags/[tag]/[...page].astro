@@ -6,6 +6,7 @@ import TagCloud from "../../../components/TagCloud.astro";
 import { formatFrenchDateShort } from "../../../utils/formatDate";
 import { formatReadingTimeMinutes, getReadingTimeMinutes } from "../../../utils/readingTime";
 import { sortNewsByDateDesc } from "../../../utils/news";
+import { slugify } from "../../../utils/slugify";
 
 export async function getStaticPaths({ paginate }) {
   const allNews = await getCollection("news");
@@ -15,17 +16,19 @@ export async function getStaticPaths({ paginate }) {
     const filteredNews = allNews.filter((post) => post.data.tags?.includes(tag));
     const sortedNews = sortNewsByDateDesc(filteredNews);
     return paginate(sortedNews, {
-      params: { tag },
+      params: { tag: slugify(tag) },
+      props: { originalTag: tag },
       pageSize: 12,
     });
   });
 }
 
 const { tag } = Astro.params;
-const { page } = Astro.props;
+const { page, originalTag } = Astro.props;
+const displayTag = originalTag || tag;
 ---
 
-<Layout title={`Actualités avec le tag #${tag} - Page ${page.currentPage} - The HNPaper Daily`}>
+<Layout title={`Actualités avec le tag #${displayTag} - Page ${page.currentPage} - The HNPaper Daily`}>
   <div class="mb-12 border-b-4 border-double border-stone-300 pb-4 text-center">
     <h2
       class="text-2xl font-bold font-serif text-stone-600 uppercase tracking-widest"
@@ -35,7 +38,7 @@ const { page } = Astro.props;
     <span
       class="text-xs font-sans font-bold uppercase tracking-widest text-stone-500 mt-2 block"
     >
-      Tag : #{tag} &nbsp;&bull;&nbsp; {page.total} article{
+      Tag : #{displayTag} &nbsp;&bull;&nbsp; {page.total} article{
         page.total > 1 ? "s" : ""
       } &nbsp;&bull;&nbsp; Page {page.currentPage} sur {page.lastPage}
     </span>
