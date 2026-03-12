@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
+import TagList from '../../components/TagList.astro';
 import { formatFrenchDateShort } from '../../utils/formatDate';
 import { formatReadingTimeMinutes, getReadingTimeMinutes } from '../../utils/readingTime';
 import { sortNewsByDateDesc } from '../../utils/news';
@@ -36,6 +37,10 @@ const { page } = Astro.props;
               {formatFrenchDateShort(post.data.date)}
             </span>
             <span>{formatReadingTimeMinutes(getReadingTimeMinutes(post.body))}</span>
+          </div>
+
+          <div class="mb-4">
+            <TagList tags={post.data.tags} />
           </div>
 
           <p class="text-stone-700 font-serif text-base lg:text-lg leading-relaxed mb-6 flex-grow line-clamp-6 text-justify">
