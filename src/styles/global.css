@@ -60,8 +60,8 @@ h6 {
   background-color: oklch(88% 0.127 124.321);
 }
 
-.bento-grid {
-  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 items-start;
+.masonry-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 items-start;
   grid-auto-flow: dense;
   grid-auto-rows: 1px;
   opacity: 0;
@@ -69,58 +69,43 @@ h6 {
   transition: opacity 0.4s ease-out, transform 0.4s ease-out;
 }
 
-.bento-grid.bento-loaded {
+.masonry-grid.masonry-loaded {
   opacity: 1;
   transform: translateY(0);
 }
 
-.bento-section {
+.masonry-section {
   @apply bg-white p-6 md:p-8 rounded-[1rem] shadow-sm border border-stone-200/80 flex flex-col transition-all duration-300 hover:shadow-md hover:border-stone-300 relative overflow-hidden;
 }
 
-/* Varied widths for a true bento feel - more random distribution */
-.bento-section:nth-child(3n + 1) {
-  @apply md:col-span-2 lg:col-span-1;
-}
+/* Removed masonry varied widths for standard masonry layout */
 
-.bento-section:nth-child(4n + 2) {
-  @apply md:col-span-1 lg:col-span-2;
-}
-
-.bento-section:nth-child(5n + 3) {
-  @apply md:col-span-2 lg:col-span-2;
-}
-
-.bento-section:nth-child(7n + 1) {
-  @apply md:col-span-2 lg:col-span-3;
-}
-
-.bento-section h2 {
+.masonry-section h2 {
   @apply !mt-0 !mb-4 text-2xl md:text-3xl font-bold font-serif text-stone-900 leading-tight;
 }
 
-.bento-section p {
+.masonry-section p {
   @apply text-base md:text-lg leading-relaxed text-stone-800 text-justify !mt-0 !mb-4;
 }
 
-.bento-section p:last-of-type {
+.masonry-section p:last-of-type {
   @apply !mb-0;
 }
 
-.bento-section ul,
-.bento-section ol {
+.masonry-section ul,
+.masonry-section ol {
   @apply my-4 space-y-2;
 }
 
-.bento-section blockquote {
+.masonry-section blockquote {
   @apply my-6 border-l-4 border-stone-300 pl-6 italic text-stone-700 bg-stone-100/50 p-6 rounded-2xl;
 }
 
-.bento-section a {
+.masonry-section a {
   @apply text-stone-900 underline decoration-1 underline-offset-4 hover:decoration-2 transition-all font-medium;
 }
 
 /* Style for the HN/Source links footer inside a card */
-.bento-section ul:last-child {
+.masonry-section ul:last-child {
   @apply mt-auto pt-6 border-t border-stone-100 text-sm font-sans font-bold tracking-wider text-stone-500 !mb-0;
 }

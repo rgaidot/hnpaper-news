@@ -74,10 +74,10 @@ const { title, slug, readingTime } = Astro.props;
         };
 
         // If the article is already wrapped (or doesn't need wrapping), init immediately
-        if (document.querySelector('.bento-section') || !document.querySelector('.bento-grid')) {
+        if (document.querySelector('.masonry-section') || !document.querySelector('.masonry-grid')) {
           createController();
         } else {
-          window.addEventListener('bento-wrapped', createController, { once: true });
+          window.addEventListener('masonry-wrapped', createController, { once: true });
         }
     });
   }

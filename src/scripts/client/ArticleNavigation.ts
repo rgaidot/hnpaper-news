@@ -60,25 +60,25 @@ export class ArticleNavigation {
 
   private scanSections() {
     const article =
-      document.querySelector(".bento-grid") ||
+      document.querySelector(".masonry-grid") ||
       (document.querySelector(".prose") as HTMLElement);
     if (!article) return;
 
     this.sections = [];
 
-    // Check for bento sections first
-    const bentoSections = Array.from(
-      article.querySelectorAll(".bento-section"),
+    // Check for masonry sections first
+    const masonrySections = Array.from(
+      article.querySelectorAll(".masonry-section"),
     ) as HTMLElement[];
 
-    if (bentoSections.length > 0) {
-      bentoSections.forEach((section, index) => {
+    if (masonrySections.length > 0) {
+      masonrySections.forEach((section, index) => {
         this.sections.push({
           element: section,
         });
       });
     } else {
-      // Fallback for non-bento or before-wrap state
+      // Fallback for non-masonry or before-wrap state
       const hrs = Array.from(article.querySelectorAll("hr"));
 
       if (article.firstElementChild) {
@@ -122,7 +122,7 @@ export class ArticleNavigation {
     }
 
     let targetForNumber = element;
-    if (element.classList.contains("bento-section")) {
+    if (element.classList.contains("masonry-section")) {
       targetForNumber =
         (element.querySelector("p, h2, h3, h4, h5, h6") as HTMLElement) ||
         element;
