@@ -1,0 +1,18 @@
+---
+interface Props {
+  tags: string[] | undefined;
+  centered?: boolean;
+}
+
+const { tags, centered = false } = Astro.props;
+---
+
+{tags && tags.length > 0 && (
+  <div class={`flex flex-wrap gap-2 ${centered ? 'justify-center' : ''}`}>
+    {tags.map(tag => (
+      <span class="px-2 py-0.5 border border-stone-200 rounded-full text-[10px] text-stone-500 font-sans font-bold uppercase tracking-wider bg-stone-50/50">
+        {tag}
+      </span>
+    ))}
+  </div>
+)}
