@@ -33,7 +33,7 @@ const audioFileExists = hasLocalAudio(entry.slug);
 ---
 
 <Layout title={entry.data.title}>
-  <article class="mx-auto max-w-5xl pb-24" data-pagefind-body>
+  <article class="mx-auto max-w-5xl pb-24" data-pagefind-body data-pagefind-sort={`date:${entry.data.date.toISOString()}`}>
     <header
       class="mb-10 text-center"
     >
