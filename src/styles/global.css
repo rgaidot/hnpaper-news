@@ -13,6 +13,11 @@ body {
   @apply bg-[#f9f7f1] text-stone-900 antialiased;
 }
 
+::target-text {
+  background-color: oklch(93.8% 0.127 124.321);
+  color: #1c1917;
+}
+
 h1,
 h2,
 h3,
