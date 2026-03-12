@@ -111,10 +111,10 @@
   import { ArticleNavigation } from "../scripts/client/ArticleNavigation";
 
   function init() {
-    if (document.querySelector('.bento-section') || !document.querySelector('.bento-grid')) {
+    if (document.querySelector('.masonry-section') || !document.querySelector('.masonry-grid')) {
       new ArticleNavigation();
     } else {
-      window.addEventListener('bento-wrapped', () => new ArticleNavigation(), { once: true });
+      window.addEventListener('masonry-wrapped', () => new ArticleNavigation(), { once: true });
     }
   }
 

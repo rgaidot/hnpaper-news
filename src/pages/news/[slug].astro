@@ -48,7 +48,7 @@ const audioFileExists = hasLocalAudio(entry.slug);
     </header>
 
     <div
-      class="prose prose-stone prose-lg max-w-none mx-auto text-justify bento-grid
+      class="prose prose-stone prose-lg max-w-none mx-auto text-justify masonry-grid
       prose-headings:font-serif prose-headings:font-bold prose-headings:text-stone-900
       prose-p:font-serif prose-p:text-stone-800
       prose-a:text-stone-900 prose-a:underline prose-a:decoration-1 hover:prose-a:decoration-2 prose-a:font-normal prose-strong:text-base
@@ -59,9 +59,9 @@ const audioFileExists = hasLocalAudio(entry.slug);
     </div>
 
     <script>
-      import { initBentoSections } from '../../scripts/client/bento';
+      import { initMasonrySections } from '../../scripts/client/masonry';
 
-      initBentoSections();
+      initMasonrySections();
     </script>
 
     <div

@@ -1,10 +1,10 @@
-let bentoObserver: ResizeObserver | null = null;
+let masonryObserver: ResizeObserver | null = null;
 
-function packBento() {
-  const container = document.querySelector(".bento-grid") as HTMLElement;
+function packMasonry() {
+  const container = document.querySelector(".masonry-grid") as HTMLElement;
   if (!container) return;
 
-  const items = container.querySelectorAll(".bento-section");
+  const items = container.querySelectorAll(".masonry-section");
   if (items.length === 0) return;
 
   const style = window.getComputedStyle(container);
@@ -23,21 +23,21 @@ function packBento() {
   });
 }
 
-function wrapBentoSections() {
-  const container = document.querySelector(".bento-grid");
+function wrapMasonrySections() {
+  const container = document.querySelector(".masonry-grid");
   if (!container) return;
 
-  if (!container.querySelector(".bento-section")) {
+  if (!container.querySelector(".masonry-section")) {
     const children = Array.from(container.children);
     let currentSection = document.createElement("section");
-    currentSection.className = "bento-section";
+    currentSection.className = "masonry-section";
 
     const sections: HTMLElement[] = [];
     children.forEach((child) => {
       if (child.tagName === "HR") {
         if (currentSection.childNodes.length > 0) sections.push(currentSection);
         currentSection = document.createElement("section");
-        currentSection.className = "bento-section";
+        currentSection.className = "masonry-section";
       } else {
         currentSection.appendChild(child);
       }
@@ -50,36 +50,36 @@ function wrapBentoSections() {
       container.appendChild(section);
     });
 
-    window.dispatchEvent(new Event("bento-wrapped"));
+    window.dispatchEvent(new Event("masonry-wrapped"));
   }
 
-  if (!bentoObserver) {
-    bentoObserver = new ResizeObserver(() => {
-      requestAnimationFrame(packBento);
+  if (!masonryObserver) {
+    masonryObserver = new ResizeObserver(() => {
+      requestAnimationFrame(packMasonry);
     });
   } else {
-    bentoObserver.disconnect();
+    masonryObserver.disconnect();
   }
 
-  const sections = container.querySelectorAll(".bento-section");
+  const sections = container.querySelectorAll(".masonry-section");
   sections.forEach((section) => {
-    bentoObserver!.observe(section);
+    masonryObserver!.observe(section);
   });
-  bentoObserver.observe(container);
+  masonryObserver.observe(container);
 
-  packBento();
+  packMasonry();
 
   requestAnimationFrame(() => {
-    container.classList.add("bento-loaded");
+    container.classList.add("masonry-loaded");
   });
 }
 
-export function initBentoSections() {
-  document.addEventListener("astro:page-load", wrapBentoSections);
+export function initMasonrySections() {
+  document.addEventListener("astro:page-load", wrapMasonrySections);
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", wrapBentoSections);
+    document.addEventListener("DOMContentLoaded", wrapMasonrySections);
   } else {
-    wrapBentoSections();
+    wrapMasonrySections();
   }
 }
