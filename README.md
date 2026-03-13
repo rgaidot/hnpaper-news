@@ -146,6 +146,16 @@ Deployment is automated via **GitHub Actions**.
 
 ## 🧰 Utils & Scripts
 
+### `scripts/fix-news-links.py`
+
+This Python script automatically corrects or updates the "Discussion HN" and "Article source" links in the Markdown articles (`src/content/news/*.md`) based on the CSV file (which should be located at the root of the project). It parses the content of each article individually to reliably match and inject the correct URLs.
+
+**Usage:**
+
+```bash
+python3 scripts/fix-news-links.py
+```
+
 ### `src/utils/`
 
 - `audio.ts`
