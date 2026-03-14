@@ -13,25 +13,29 @@ Welcome to the **HNPaper News** repository, an automated news archive from [HNPa
 - **Share Section**: Click on the link icon next to any paragraph to copy a direct link to that specific section.
 - **Full-Page Player**: Dedicated `/player/:slug` route with an audio visualizer.
 - **Archives & Pagination**: `/news` paginated archive (12 items per page).
-- **Newspaper Design**: A clean, serif-focused aesthetic inspired by classic print media.
+- **Tags & Navigation**: Support for reading and navigating articles by categories using a dedicated `/tags` route and tag clouds.
+- **Newspaper Design**: A clean, serif-focused aesthetic inspired by classic print media, utilizing a dynamic Masonry layout for article sections.
 - **Global Search (Pagefind)**: Integrated client-side search using Pagefind, enabling users to search articles with dynamic results, "Load More" pagination, and custom styling. The search index is automatically built and copied during the build process.
 
 ## 🚀 Technologies
 
 - **Framework**: [Astro](https://astro.build) v5
 - **Styles**: [Tailwind CSS](https://tailwindcss.com) v4
+- **Package Manager**: [Bun](https://bun.sh)
 - **PWA**: Vite PWA
+- **Search**: [Pagefind](https://pagefind.app)
+- **Deployment/Serving**: Docker (Nginx with Brotli) & GitHub Pages
 - **Linting/Formatting**: [Biome](https://biomejs.dev)
-- **Hosting**: GitHub Pages
 
 ## 📂 Project Structure
 
 ```text
 /
-├── .github/workflows # GitHub Actions for deployment
-├── public/           # Static files (favicon, CNAME, pwa icons, **generated audio files** in `public/audio` as .mp3/.vtt)
+├── .github/workflows # GitHub Actions for deployment and audio generation
+├── public/           # Static files (favicon, CNAME, pwa icons, generated audio files in `public/audio`)
+├── scripts/          # Automation scripts (audio generation, release, link fixing)
 ├── src/
-│   ├── components/   # UI Components (TTSPlayer, etc.)
+│   ├── components/   # UI Components (TTSPlayer, Search, etc.)
 │   ├── content/      # Content collections
 │   │   └── news/     # News Markdown files (YYYY-MM-DD-HHMM.md)
 │   ├── layouts/      # Layouts (Layout.astro)
@@ -40,12 +44,13 @@ Welcome to the **HNPaper News** repository, an automated news archive from [HNPa
 │   ├── utils/        # Shared helpers (dates, reading time, audio paths)
 │   └── styles/       # Global CSS
 ├── astro.config.mjs  # Astro configuration
+├── makefile          # Shortcuts for build and deployment
+├── nginx.conf        # Optimized Nginx configuration
+├── Dockerfile        # Container configuration for production serving
 └── package.json      # Dependencies and scripts
 ```
 
 ## 🧭 Diagrams (Overview)
-
-These diagrams give a high-level view of how content becomes audio and ends up on the site, plus the build steps with search indexing.
 
 ### Content, audio, and site pipeline
 
@@ -76,13 +81,15 @@ flowchart TD
 
 Prerequisites:
 
-- Bun installed (https://bun.sh).
+- [Bun](https://bun.sh) installed.
 - `ffmpeg` + `ffprobe` available in PATH (audio generation uses them).
 
 1.  **Install dependencies**
 
     ```bash
     bun install
+    # OR using the makefile
+    make install
     ```
 
 2.  **Start the development server**
@@ -95,11 +102,12 @@ Prerequisites:
 
 3.  **Generate Audio Files**
 
-    The project automatically generates `.mp3` audio files and `.vtt` subtitles for each article, which are used by the TTS player and Google Cast. (JSON timestamps are generated transiently by Edge TTS and removed after conversion.)
-    This step requires an internet connection because `node-edge-tts` uses Microsoft Edge TTS voices.
+    The project automatically generates `.mp3` audio files and `.vtt` subtitles for each article. This step requires an internet connection because `node-edge-tts` uses Microsoft Edge TTS voices.
 
     ```bash
     bun run scripts/generate-audio.ts
+    # OR using the makefile
+    make generate-audio
     ```
 
     To force regeneration of all audio files (even if they already exist):
@@ -123,113 +131,67 @@ Prerequisites:
     bun run check:fix
     ```
 
-5.  **Preview the production build**
+## 📦 Build & Deployment
 
-    ```bash
-    bun run preview
-    ```
+### GitHub Pages (Automated)
 
-6.  **Build the production site**
+Deployment is automated via **GitHub Actions**.
+
+- On every push to the `main` branch, the workflow `.github/workflows/deploy.yml` builds the site and deploys it to the GitHub Pages environment.
+- The workflow `.github/workflows/generate-audio.yml` automatically generates and commits audio files for new or updated articles.
+
+### Docker & Nginx (Manual/Private)
+
+The project includes a `Dockerfile` and an optimized `nginx.conf` for serving the static site with Brotli compression and proper security headers.
+
+1.  **Build the production site**
 
     ```bash
     bun run build
     ```
 
-    This runs `astro build`, generates the Pagefind index, then copies it to `public/pagefind/` for static hosting.
+    This runs `astro build`, generates the Pagefind index, and prepares the `dist/` folder.
 
-## 📦 Deployment
+2.  **Build and run the Docker image**
 
-Deployment is automated via **GitHub Actions**.
+    ```bash
+    # Build using makefile (requires podman/docker)
+    make build
 
-- On every push to the `main` branch, the workflow `.github/workflows/deploy.yml` builds the site and deploys it to the GitHub Pages environment.
-- The workflow `.github/workflows/generate-audio.yml` automatically generates and commits audio files for new or updated articles, then triggers a new deploy.
+    # Or run manually
+    docker build -t hnpaper-news .
+    docker run -p 4321:4321 hnpaper-news
+    ```
 
 ## 🧰 Utils & Scripts
 
 ### `scripts/fix-news-links.py`
 
-This Python script automatically corrects or updates the "Discussion HN" and "Article source" links in the Markdown articles (`src/content/news/*.md`) based on the CSV file (which should be located at the root of the project). It parses the content of each article individually to reliably match and inject the correct URLs.
+This Python script automatically corrects or updates the "Discussion HN" and "Article source" links in the Markdown articles based on a CSV file.
 
-**Usage:**
+### `scripts/release.sh`
 
-```bash
-python3 scripts/fix-news-links.py
-```
+Simple tag-based release script: `./scripts/release.sh X.Y.Z`
 
 ### `src/utils/`
 
-- `audio.ts`
-  - `getAudioPath(slug)` → absolute path to `public/audio/{slug}.mp3`
-  - `getAudioUrl(site, slug)` → absolute URL to `audio/{slug}.mp3` using `context.site`
-  - `hasLocalAudio(slug)` → `true` if the MP3 exists on disk
-
-- `formatDate.ts`
-  - `formatFrenchDate(date)` → `EEEE d MMMM yyyy à HH:mm`
-  - `formatFrenchDateShort(date)` → `d MMMM yyyy`
-  - `formatFrenchDateLong(date)` → `EEEE d MMMM yyyy`
-
-- `news.ts`
-  - `sortNewsByDateDesc(entries)` → newest → oldest (non‑mutating)
-  - `getLatestNews(entries)` → returns the newest entry
-
-- `readingTime.ts`
-  - `getReadingTimeMinutes(text, wpm = 200)` → reading time in minutes
-  - `formatReadingTimeMinutes(minutes)` → `X h Y min` or `Z min`
+- `audio.ts`: Helpers for audio paths and URLs.
+- `formatDate.ts`: French date formatting utilities.
+- `news.ts`: Sorting and retrieval logic for news entries.
+- `readingTime.ts`: Reading time calculation.
+- `slugify.ts`: String slugification utility.
 
 ### `src/scripts/client/`
 
-- `bento.ts`
-  - `initBentoSections()` → wraps `.bento-grid` content into `.bento-section` blocks split by `<hr>`, emits `bento-wrapped`
-
-- `ArticleNavigation.ts`
-  - `constructor()` → finds UI elements and initializes navigation
-  - `init()` → scan sections + bind events + scroll spy + hash handling
-  - `scanSections()` → builds section list (bento or `<hr>` based)
-  - `createAnchor(element, id, index)` → adds section number + copy link button
-  - `bindEvents()` → prev/next/top/play, keyboard shortcuts, speed + state listeners
-  - `navigate(dir)` → move to next/prev section (and play if active)
-  - `setupScrollSpy()` → updates active section on scroll
-  - `scrollToSection(index)` → smooth scroll to section
-  - `handleInitialHash()` → jump to `#section-N` on load
-
-- `TTSController.ts`
-  - `constructor(options)` → wires UI, audio, and state
-  - `init()` → events + cast init + content prep + remaining time
-  - VTT/word alignment:
-    - `loadVTT()`, `parseVTT(text)`, `normalizeWord(word)`, `buildCueMappingByText()`, `findCueAtTime(time)`
-  - Audio + remaining time:
-    - `bindAudioEvents()`, `getEffectiveRate()`, `formatRemainingTime(seconds)`
-    - `renderRemainingTime(seconds)`, `resetRemainingTime()`, `updateRemainingTime()`
-    - `updateRemainingTimeFromAudio()`, `updateRemainingTimeFromText()`
-  - Casting:
-    - `initializeCast()`, `loadRemoteMedia()`
-  - Controls:
-    - `bindEvents()`, `toggle()`, `play()`, `pause()`, `resume()`, `stop()`
-    - `playFromElement(element)`
-  - Content prep + highlighting:
-    - `prepareContent()`, `wrapWords()`, `buildWordMap()`, `segmentSentences()`
-    - `speakSentence()`, `highlightWord(index)`, `highlightElements(elements)`, `clearHighlight()`
-  - Speed + session:
-    - `updateSpeed()`, `setupMediaSession()`
-  - Wake lock + state:
-    - `requestWakeLock()`, `releaseWakeLock()`, `updateState(state)`
-
-## 🧰 Release
-
-Simple tag-based release script:
-
-```bash
-./scripts/release.sh X.Y.Z
-```
+- `ArticleNavigation.ts`: Handles sectioning, scroll spy, and keyboard shortcuts.
+- `TTSController.ts`: Manages audio playback, VTT syncing, and Google Cast integration.
+- `masonry.ts`: Client-side masonry layout functionality.
 
 ## 📄 Data Format
 
-News items are stored in `src/content/news/` as Markdown files.
-**Filename convention**: `YYYY-MM-DD-HHMM.md`
+News items are stored in `src/content/news/` as Markdown files using the `YYYY-MM-DD-HHMM.md` naming convention.
 
 ### Frontmatter Schema
-
-Each file must begin with the following YAML frontmatter:
 
 ```yaml
 ---
@@ -239,10 +201,3 @@ author: HNPaper Bot
 tags: [news]
 ---
 ```
-
-Optional fields:
-
-- `tags` (array of strings)
-- `layout` (string)
-
-The filename (without `.md`) becomes the slug used for routes and audio files (e.g. `2026-01-27-1400` → `/news/2026-01-27-1400/` and `public/audio/2026-01-27-1400.mp3`).
