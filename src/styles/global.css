@@ -48,10 +48,12 @@ h6 {
 }
 
 .tts-active {
-  @apply font-semibold text-xl; 
+  @apply font-sans text-xl; 
   background-color: oklch(93.8% 0.127 124.321);
-  padding: 4px 8px;
-  color: #1c1917;
+  padding: 0.1em 0.2em;
+  border-radius: 3px;
+  border: 1px solid;
+  box-shadow: 0px 1px 0px, inset 0px 0px 0px 2px #ffffff;
 }
 
 .tts-button-style {
