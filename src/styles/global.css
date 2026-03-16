@@ -34,7 +34,8 @@ h6 {
   }
 }
 
-.tts-word {
+
+h2, .tts-word {
   border-radius: 4px;
   padding: 2px 2px;
   margin: 0 -2px;
@@ -87,8 +88,9 @@ h6 {
 
 /* Removed masonry varied widths for standard masonry layout */
 
-.masonry-section h2 {
-  @apply !mt-0 !mb-4 text-2xl md:text-3xl font-bold font-serif text-stone-900 leading-tight;
+.masonry-section h2,
+.masonry-section h3 {
+  @apply !mt-0 !mb-4 text-xl md:text-2xl font-bold font-serif text-stone-500 leading-tight text-left;
 }
 
 .masonry-section p {
@@ -101,11 +103,11 @@ h6 {
 
 .masonry-section ul,
 .masonry-section ol {
-  @apply my-4 space-y-2;
+  @apply my-4 space-y-2 text-left;
 }
 
 .masonry-section blockquote {
-  @apply my-6 border-l-4 border-stone-300 pl-6 italic text-stone-700 bg-stone-100/50 p-6 rounded-2xl;
+  @apply my-6 border-l-4 border-stone-300 pl-6 italic text-stone-700 bg-stone-100/50 p-6 rounded-2xl text-left;
 }
 
 .masonry-section a {
@@ -114,5 +116,5 @@ h6 {
 
 /* Style for the HN/Source links footer inside a card */
 .masonry-section ul:last-child {
-  @apply mt-auto pt-6 border-t border-stone-100 text-sm font-sans font-bold tracking-wider text-stone-500 !mb-0;
+  @apply mt-auto pt-6 border-t border-stone-100 text-sm font-sans font-bold tracking-wider text-stone-500 !mb-0 text-left;
 }
