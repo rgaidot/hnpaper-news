@@ -26,10 +26,11 @@ pnpm-debug.log*
 # pagefind search index (generated)
 public/pagefind/
 
-*part*.mp3
+*part*.mp3.*
 
 tts_server/
 
-#public/audio/
-#*.mp3
-#*.vtt
+public/audio/
+*.mp3
+*.vtt
+*.json

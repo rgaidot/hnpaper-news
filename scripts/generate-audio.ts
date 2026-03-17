@@ -142,6 +142,8 @@ function jsonToVtt(subtitles: any[]): string {
 
 function cleanMarkdown(markdown: string): string {
   let text = markdown;
+  text = text.replace(/[\u201C\u201D\u00AB\u00BB]/g, ""); // Strip smart double quotes and guillemets
+  text = text.replace(/[\u2018\u2019]/g, "'"); // Standardize smart single quotes/apostrophes
   text = text.replace(/<!--[\s\S]*?-->/g, "");
   text = text.replace(/```[\s\S]*?```/g, "");
   text = text.replace(/`([^`]+)`/g, "$1");
@@ -209,16 +211,20 @@ async function processFile(
   const vttPath = path.join(AUDIO_DIR, `${filename}.vtt`);
 
   if (!force && fs.existsSync(audioPath) && fs.existsSync(vttPath)) {
+    stats.skipped++;
     log.progress(
-      fileIndex,
+      stats.success + stats.skipped + stats.failed,
       totalFiles,
       `${filename} — Already generated, skipped.`,
     );
-    stats.skipped++;
     return;
   }
 
-  log.progress(fileIndex, totalFiles, `${filename}${force ? " (forced)" : ""}`);
+  log.progress(
+    stats.success + stats.skipped + stats.failed,
+    totalFiles,
+    `Starting ${filename}${force ? " (forced)" : ""}`
+  );
   const startTime = Date.now();
 
   const tts = new EdgeTTS({
@@ -324,9 +330,19 @@ async function processFile(
     completionTimes.push(Date.now() - startTime);
     log.success(filename, `Generated in ${c.bold}${elapsed}s${c.reset}.`);
     stats.success++;
+    log.progress(
+      stats.success + stats.skipped + stats.failed,
+      totalFiles,
+      `${filename} — Generated in ${elapsed}s.`
+    );
   } catch (err) {
     log.error(filename, "Generation failed.", err);
     stats.failed++;
+    log.progress(
+      stats.success + stats.skipped + stats.failed,
+      totalFiles,
+      `${filename} — Generation failed.`
+    );
 
     for (const p of [audioPath, vttPath]) {
       if (fs.existsSync(p))
@@ -338,7 +354,7 @@ async function processFile(
 }
 
 async function generateAudio() {
-  const forceRegeneration = process.argv.includes("--force");
+  const forceRegeneration = process.argv.includes("--force") || process.argv.includes("-f");
   const files = await glob(`${NEWS_DIR}/*.md`);
 
   log.section(
