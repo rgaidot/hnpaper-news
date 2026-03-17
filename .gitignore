@@ -30,6 +30,6 @@ public/pagefind/
 
 tts_server/
 
-public/audio/
-*.mp3
-*.vtt
+#public/audio/
+#*.mp3
+#*.vtt
