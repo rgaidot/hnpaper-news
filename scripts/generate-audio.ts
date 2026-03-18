@@ -3,6 +3,7 @@ import path from "bun:path";
 import fm from "front-matter";
 import { glob } from "glob";
 import { EdgeTTS } from "node-edge-tts";
+import { S3Client, PutObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 
 const NEWS_DIR = "src/content/news";
 const AUDIO_DIR = "public/audio";
@@ -19,6 +20,62 @@ const c = {
   blue: "\x1b[34m",
   gray: "\x1b[90m",
 };
+
+const r2Config = {
+  accountId: process.env.R2_ACCOUNT_ID || "",
+  accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
+  secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
+  bucketName: process.env.R2_BUCKET_NAME || "",
+};
+
+function getS3Client() {
+  if (!r2Config.accountId || !r2Config.accessKeyId || !r2Config.secretAccessKey) return null;
+  return new S3Client({
+    region: "auto",
+    endpoint: `https://${r2Config.accountId}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: r2Config.accessKeyId,
+      secretAccessKey: r2Config.secretAccessKey,
+    },
+  });
+}
+
+async function listR2Objects(s3: S3Client): Promise<Record<string, number>> {
+  let isTruncated = true;
+  let continuationToken: string | undefined = undefined;
+  const objects: Record<string, number> = {};
+
+  try {
+    while (isTruncated) {
+      const command = new ListObjectsV2Command({
+        Bucket: r2Config.bucketName,
+        Prefix: "audio/",
+        ContinuationToken: continuationToken,
+      });
+      const response = await s3.send(command);
+      for (const item of response.Contents || []) {
+        if (item.Key && item.Size !== undefined) {
+          objects[item.Key.replace("audio/", "")] = item.Size;
+        }
+      }
+      isTruncated = response.IsTruncated ?? false;
+      continuationToken = response.NextContinuationToken;
+    }
+  } catch (err) {
+    console.error("Failed to list objects from R2:", err);
+  }
+  return objects;
+}
+
+async function uploadToR2(s3: S3Client, filePath: string, key: string, contentType: string) {
+  const command = new PutObjectCommand({
+    Bucket: r2Config.bucketName,
+    Key: `audio/${key}`,
+    Body: fs.readFileSync(filePath),
+    ContentType: contentType,
+  });
+  await s3.send(command);
+}
 
 let progressLine = "";
 const globalStart = Date.now();
@@ -205,18 +262,33 @@ async function processFile(
   force: boolean,
   fileIndex: number,
   totalFiles: number,
+  s3: S3Client | null,
+  r2Objects: Record<string, number>,
+  indexData: Record<string, { size: number }>
 ) {
   const filename = path.basename(file, ".md");
   const audioPath = path.join(AUDIO_DIR, `${filename}.mp3`);
   const vttPath = path.join(AUDIO_DIR, `${filename}.vtt`);
+  const mp3Key = `${filename}.mp3`;
+  const vttKey = `${filename}.vtt`;
 
-  if (!force && fs.existsSync(audioPath) && fs.existsSync(vttPath)) {
+  const existsOnR2 = r2Objects[mp3Key] !== undefined && r2Objects[vttKey] !== undefined;
+  const existsLocally = fs.existsSync(audioPath) && fs.existsSync(vttPath);
+
+  if (!force && (existsOnR2 || (!s3 && existsLocally))) {
     stats.skipped++;
     log.progress(
       stats.success + stats.skipped + stats.failed,
       totalFiles,
       `${filename} — Already generated, skipped.`,
     );
+    
+    // Add to index
+    if (existsOnR2) {
+      indexData[filename] = { size: r2Objects[mp3Key] };
+    } else if (existsLocally) {
+      indexData[filename] = { size: fs.statSync(audioPath).size };
+    }
     return;
   }
 
@@ -326,14 +398,29 @@ async function processFile(
       }
     }
 
+    // Upload to R2 if client exists
+    if (s3) {
+      await uploadToR2(s3, audioPath, mp3Key, "audio/mpeg");
+      await uploadToR2(s3, vttPath, vttKey, "text/vtt");
+    }
+
+    // Add to index
+    indexData[filename] = { size: fs.statSync(audioPath).size };
+
+    // Clean up local files if uploaded
+    if (s3) {
+      if (fs.existsSync(audioPath)) fs.unlinkSync(audioPath);
+      if (fs.existsSync(vttPath)) fs.unlinkSync(vttPath);
+    }
+
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     completionTimes.push(Date.now() - startTime);
-    log.success(filename, `Generated in ${c.bold}${elapsed}s${c.reset}.`);
+    log.success(filename, `Generated ${s3 ? "& Uploaded " : ""}in ${c.bold}${elapsed}s${c.reset}.`);
     stats.success++;
     log.progress(
       stats.success + stats.skipped + stats.failed,
       totalFiles,
-      `${filename} — Generated in ${elapsed}s.`
+      `${filename} — Generated ${s3 ? "and uploaded " : ""}in ${elapsed}s.`
     );
   } catch (err) {
     log.error(filename, "Generation failed.", err);
@@ -344,6 +431,7 @@ async function processFile(
       `${filename} — Generation failed.`
     );
 
+    // Clean up on failure
     for (const p of [audioPath, vttPath]) {
       if (fs.existsSync(p))
         try {
@@ -356,12 +444,24 @@ async function processFile(
 async function generateAudio() {
   const forceRegeneration = process.argv.includes("--force") || process.argv.includes("-f");
   const files = await glob(`${NEWS_DIR}/*.md`);
+  const indexData: Record<string, { size: number }> = {};
+
+  const s3 = getS3Client();
+  let r2Objects: Record<string, number> = {};
+
+  if (s3) {
+    log.info("R2", "Connecting to Cloudflare R2...");
+    r2Objects = await listR2Objects(s3);
+    log.info("R2", `Found ${Object.keys(r2Objects).length} objects in bucket.`);
+  } else {
+    log.warn("R2", "Missing R2 credentials. Falling back to local audio generation.");
+  }
 
   log.section(
     `Audio generation — ${files.length} article(s)${forceRegeneration ? " · forced mode" : ""}`,
   );
 
-  const CONCURRENCY_LIMIT = 30;
+  const CONCURRENCY_LIMIT = s3 ? 10 : 30; // Reduce concurrency if uploading
   const activePromises = new Set<Promise<void>>();
 
   for (let i = 0; i < files.length; i++) {
@@ -369,13 +469,18 @@ async function generateAudio() {
     if (activePromises.size >= CONCURRENCY_LIMIT) {
       await Promise.race(activePromises);
     }
-    const p = processFile(file, forceRegeneration, i + 1, files.length).then(
+    const p = processFile(file, forceRegeneration, i + 1, files.length, s3, r2Objects, indexData).then(
       () => activePromises.delete(p),
     );
     activePromises.add(p);
   }
 
   await Promise.all(activePromises);
+
+  // Write audio-index.json
+  const dataDir = path.join(process.cwd(), "src", "data");
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+  fs.writeFileSync(path.join(dataDir, "audio-index.json"), JSON.stringify(indexData, null, 2));
 
   process.stdout.write("\n");
   log.section("Summary");

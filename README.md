@@ -107,6 +107,16 @@ Prerequisites:
 
     The project automatically generates `.mp3` audio files and `.vtt` subtitles for each article. This step requires an internet connection because `node-edge-tts` uses Microsoft Edge TTS voices.
 
+    **Cloudflare R2 Storage Integration:**
+    To avoid excessive storage on GitHub and speed up generation times, audio files are synced to a Cloudflare R2 bucket. Set the following environment variables (or `.env` file locally):
+    - `R2_ACCOUNT_ID`: Your Cloudflare account ID.
+    - `R2_ACCESS_KEY_ID`: Your R2 API access key.
+    - `R2_SECRET_ACCESS_KEY`: Your R2 API secret key.
+    - `R2_BUCKET_NAME`: The name of your R2 bucket.
+    - `PUBLIC_R2_URL`: The public domain of your R2 bucket (e.g., `https://pub-xxxxxx.r2.dev`).
+
+    If these credentials are provided, the script will fetch missing audio from R2, generate it if necessary, upload it, and then delete the local file. It will output an index file at `src/data/audio-index.json`. If credentials are omitted, it will fall back to saving files directly in the `public/audio/` directory.
+
     ```bash
     bun run scripts/generate-audio.ts
     # OR using the makefile

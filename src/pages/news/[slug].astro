@@ -6,7 +6,7 @@ import TagList from '../../components/TagList.astro';
 import Layout from '../../layouts/Layout.astro';
 import { formatFrenchDate } from '../../utils/formatDate';
 import { getReadingTimeMinutes } from '../../utils/readingTime';
-import { hasLocalAudio } from '../../utils/audio';
+import { hasAudio } from '../../utils/audio';
 import { sortNewsByDateDesc } from '../../utils/news';
 
 export async function getStaticPaths() {
@@ -30,7 +30,7 @@ const formattedDate = formatFrenchDate(entry.data.date);
 
 const readingTime = getReadingTimeMinutes(entry.body);
 
-const audioFileExists = hasLocalAudio(entry.slug);
+const audioFileExists = hasAudio(entry.slug);
 ---
 
 <Layout title={entry.data.title}>

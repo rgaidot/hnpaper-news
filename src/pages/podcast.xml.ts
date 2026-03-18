@@ -1,9 +1,8 @@
 import rss from '@astrojs/rss';
 import { getCollection } from 'astro:content';
-import fs from 'node:fs';
 import { marked } from 'marked';
 import { formatFrenchDateShort } from '../utils/formatDate';
-import { getAudioPath, getAudioUrl } from '../utils/audio';
+import { getAudioUrl, hasAudio, getAudioSize } from '../utils/audio';
 import { sortNewsByDateDesc } from '../utils/news';
 
 export const GET = async (context) => {
@@ -11,14 +10,12 @@ export const GET = async (context) => {
   const sortedNews = sortNewsByDateDesc(news);
 
   const items = await Promise.all(sortedNews.map(async (post) => {
-    const audioPath = getAudioPath(post.slug);
-    const audioUrl = getAudioUrl(context.site, post.slug);
-
-    if (!fs.existsSync(audioPath)) {
+    if (!hasAudio(post.slug)) {
       return null;
     }
 
-    const stats = fs.statSync(audioPath);
+    const audioUrl = getAudioUrl(context.site, post.slug);
+    const audioSize = getAudioSize(post.slug);
     const contentHtml = await marked.parse(post.body);
 
     return {
@@ -28,7 +25,7 @@ export const GET = async (context) => {
       link: `/news/${post.slug}/`,
       enclosure: {
         url: audioUrl,
-        length: stats.size,
+        length: audioSize,
         type: 'audio/mpeg',
       },
       content: contentHtml,
