@@ -144,7 +144,9 @@ export class TTSController {
   // ── VTT ───────────────────────────────────────────────────────────────────
 
   private loadVTT() {
-    fetch(`/audio/${this.slug}.vtt`)
+    const r2Url = import.meta.env.PUBLIC_R2_URL;
+    const baseUrl = r2Url ? r2Url.replace(/\/$/, "") : "";
+    fetch(`${baseUrl}/audio/${this.slug}.vtt`)
       .then((res) => res.text())
       .then((text) => {
         this.parseVTT(text);
@@ -510,9 +512,11 @@ export class TTSController {
     if (!this.castSession || !this.slug) return;
     const chrome = (window as any).chrome;
     const origin = window.location.origin;
+    const r2Url = import.meta.env.PUBLIC_R2_URL;
+    const baseAudioUrl = r2Url ? r2Url.replace(/\/$/, "") : origin;
 
     const mediaInfo = new chrome.cast.media.MediaInfo(
-      `${origin}/audio/${this.slug}.mp3`,
+      `${baseAudioUrl}/audio/${this.slug}.mp3`,
       "audio/mpeg",
     );
     mediaInfo.streamType = chrome.cast.media.StreamType.BUFFERED;
@@ -527,7 +531,7 @@ export class TTSController {
       1,
       chrome.cast.media.TrackType.TEXT,
     );
-    track.trackContentId = `${origin}/audio/${this.slug}.vtt`;
+    track.trackContentId = `${baseAudioUrl}/audio/${this.slug}.vtt`;
     track.trackContentType = "text/vtt";
     track.subtype = chrome.cast.media.TextTrackType.SUBTITLES;
     track.name = "Français";

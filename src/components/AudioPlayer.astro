@@ -20,7 +20,7 @@ const { title, slug, formattedDate } = Astro.props;
       id="audio-player"
       controls 
       class="flex-1 h-10 accent-stone-500 min-w-0"
-      src={`/audio/${slug}.mp3`}
+      src={import.meta.env.PUBLIC_R2_URL ? `${import.meta.env.PUBLIC_R2_URL.replace(/\/$/, "")}/audio/${slug}.mp3` : `/audio/${slug}.mp3`}
     >
       Your browser does not support the audio element.
     </audio>
