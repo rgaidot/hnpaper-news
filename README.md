@@ -65,6 +65,9 @@ flowchart TD
   F --> G["/news/:slug/"]
   F --> H["/player/:slug/"]
   F --> I["/podcast.xml"]
+  F --> J["/news/[...page]"]
+  F --> K["/tags/[tag]/[...page]"]
+  F --> L["/"]
 ```
 
 ### Build flow with search indexing
@@ -163,7 +166,21 @@ The project includes a `Dockerfile` and an optimized `nginx.conf` for serving th
     docker run -p 4321:4321 hnpaper-news
     ```
 
-## 🧰 Utils & Scripts
+## 🧰 Components, Utils & Scripts
+
+### `src/components/`
+
+- `ArticleFloatingNav.astro`: A floating navigation bar for articles (next/prev section, speed control) that syncs with TTS playback.
+- `AudioPlayer.astro`: A persistent audio player component for listening to articles.
+- `Search.astro`: A client-side search interface powered by Pagefind with dynamic results and pagination.
+- `TagCloud.astro` / `TagList.astro`: Components for displaying categorized tags associated with articles.
+- `TTSPlayer.astro`: The primary UI controls for the Text-to-Speech functionality within articles.
+- `VoiceVisualizer.astro`: An audio visualizer used on the dedicated player route (`/player/:slug`).
+
+### `src/layouts/`
+
+- `Layout.astro`: The primary layout wrapper for the website, including the common `<head>` metadata, navigation, PWA, and global search.
+- `LayoutPlayer.astro`: A specialized layout used exclusively for the full-screen audio player route without the standard navigation elements.
 
 ### `scripts/fix-news-links.py`
 
