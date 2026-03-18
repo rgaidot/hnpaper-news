@@ -5,7 +5,7 @@
 
 ## Key Directories and Files
 *   **`astro.config.mjs`**: The main configuration file for Astro. Configured with **TailwindCSS v4**, **Vite PWA**, and the site URL `https://hnpaper-news-labs.gaidot.net`.
-*   **`src/content/news/`**: Contains the individual news posts. Files follow the naming convention `YYYY-MM-DD-HHMM.md`.
+*   **`data/news/`**: Contains the individual news posts. Files follow the naming convention `YYYY-MM-DD-HHMM.md`.
 *   **`src/content/config.ts`**: Defines the `news` content collection schema using Zod.
 *   **`src/pages/index.astro`**: The entry point of the site, which loops through and displays recent posts.
 *   **`.github/workflows/deploy.yml`**: The GitHub Actions workflow that automatically builds and deploys the site to GitHub Pages upon pushing to the `main` branch.
@@ -40,7 +40,7 @@ To run the site locally, you would typically use the standard Node.js commands (
     ```
 
 ### Creating New Posts
-New posts are added to the `src/content/news/` directory.
+New posts are added to the `data/news/` directory.
 
 *   **Filename Format:** `YYYY-MM-DD-HHMM.md` (e.g., `2026-01-27-1400.md`)
 *   **Content Structure:**

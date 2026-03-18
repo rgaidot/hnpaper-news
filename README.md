@@ -32,13 +32,15 @@ Welcome to the **HNPaper News** repository, an automated news archive from [HNPa
 ```text
 /
 ├── .github/workflows # GitHub Actions for deployment and audio generation
-├── public/           # Static files (favicon, CNAME, pwa icons, generated audio files in `public/audio`)
+├── data/             # Content and generated data
+│   ├── audio/        # Generated audio files (mp3, vtt)
+│   ├── news/         # News Markdown files (YYYY-MM-DD-HHMM.md)
+│   └── audio-index.json # Generated JSON index
+├── public/           # Static files (favicon, CNAME, pwa icons)
 ├── scripts/          # Automation scripts (audio generation, release)
 ├── src/
 │   ├── components/   # UI Components (TTSPlayer, Search, etc.)
-│   ├── content/      # Content collections
-│   │   └── news/     # News Markdown files (YYYY-MM-DD-HHMM.md)
-│   ├── data/         # Generated JSON files (e.g., audio-index.json)
+│   ├── content/      # Content collections config and symlinks
 │   ├── layouts/      # Layouts (Layout.astro)
 │   ├── pages/        # Routes (index, pagination, detail pages)
 │   ├── scripts/      # Client-side scripts (TTS, Navigation)
@@ -57,12 +59,12 @@ Welcome to the **HNPaper News** repository, an automated news archive from [HNPa
 
 ```mermaid
 flowchart TD
-  A[Markdown<br/>src/content/news/*.md] --> B[scripts/generate-audio.ts]
+  A[Markdown<br/>data/news/*.md] --> B[scripts/generate-audio.ts]
   B --> C[Edge TTS<br/>node-edge-tts]
   B --> D[FFmpeg/ffprobe<br/>durations + concat]
-  C --> E[public/audio/*.mp3 + *.vtt<br/>or Cloudflare R2]
+  C --> E[data/audio/*.mp3 + *.vtt<br/>or Cloudflare R2]
   D --> E
-  B --> IDX[src/data/audio-index.json]
+  B --> IDX[data/audio-index.json]
   E --> F[Astro pages]
   IDX --> F
   F --> G["/news/:slug/"]
@@ -96,7 +98,7 @@ flowchart TD
   TTS --> Concat[FFmpeg: Concat MP3 & create VTT]
   Concat --> Storage{Upload to R2?}
   Storage -- Yes --> R2[Upload MP3 & VTT to Cloudflare R2<br/>Remove local files]
-  Storage -- No --> Local[Keep in public/audio/]
+  Storage -- No --> Local[Keep in data/audio/]
   R2 --> Index[Add to audio-index.json<br/>with file size]
   Local --> Index
 ```
@@ -156,7 +158,7 @@ Prerequisites:
     - `R2_BUCKET_NAME`: The name of your R2 bucket.
     - `PUBLIC_R2_URL`: The public domain of your R2 bucket (e.g., `https://pub-xxxxxx.r2.dev`).
 
-    If these credentials are provided, the script will fetch missing audio from R2, generate it if necessary, upload it, and then delete the local file. It will output an index file at `src/data/audio-index.json`. If credentials are omitted, it will fall back to saving files directly in the `public/audio/` directory.
+    If these credentials are provided, the script will fetch missing audio from R2, generate it if necessary, upload it, and then delete the local file. It will output an index file at `data/audio-index.json`. If credentials are omitted, it will fall back to saving files directly in the `data/audio/` directory.
 
     ```bash
     make generate-audio
@@ -231,12 +233,12 @@ The project includes a `Dockerfile` and an optimized `nginx.conf` for serving th
 ### `scripts/generate-audio.ts`
 
 This script automates the creation of MP3 audio files and VTT subtitles from the Markdown articles. The complete flow is as follows:
-1.  **Parse Markdown**: Reads articles from `src/content/news/` and extracts the frontmatter title and body content.
+1.  **Parse Markdown**: Reads articles from `data/news/` and extracts the frontmatter title and body content.
 2.  **Clean & Chunk**: Strips Markdown formatting, links, and specific tags to create clean plain text. Splits the text into manageable chunks (max 2000 chars) to respect TTS API limits.
 3.  **Generate Audio (Edge TTS)**: Calls the Microsoft Edge TTS API (`node-edge-tts`) to generate audio segments and word-level timestamp JSONs.
 4.  **Concatenate & Convert**: Uses `ffmpeg` and `ffprobe` to measure durations, concatenate audio chunks into a single `.mp3` file, and convert the JSON timestamps into a valid WebVTT (`.vtt`) subtitle format.
 5.  **Cloud Storage (Optional)**: If Cloudflare R2 credentials are provided, uploads the `.mp3` and `.vtt` files to the bucket and removes them locally.
-6.  **Index Generation**: Updates `src/data/audio-index.json` with the final file sizes, which is used by the site to display audio capabilities and populate RSS feed enclosures.
+6.  **Index Generation**: Updates `data/audio-index.json` with the final file sizes, which is used by the site to display audio capabilities and populate RSS feed enclosures.
 
 ### `scripts/release.sh`
 
@@ -260,7 +262,7 @@ Simple tag-based release script: `./scripts/release.sh X.Y.Z`
 
 ### News Content
 
-News items are stored in `src/content/news/` as Markdown files using the `YYYY-MM-DD-HHMM.md` naming convention.
+News items are stored in `data/news/` as Markdown files using the `YYYY-MM-DD-HHMM.md` naming convention.
 
 **Frontmatter Schema:**
 
@@ -273,7 +275,7 @@ tags: [news]
 ---
 ```
 
-### Audio Index (`src/data/audio-index.json`)
+### Audio Index (`data/audio-index.json`)
 
 When the audio generation script (`scripts/generate-audio.ts`) runs, it produces an index mapping each article's filename (without the `.md` extension) to metadata about its generated audio file (such as its `size` in bytes). This file is utilized by the Astro pages to efficiently determine if an audio version of an article is available and to expose its size for the RSS podcast feed (`/podcast.xml`).
 

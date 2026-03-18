@@ -14,7 +14,7 @@ export function getAudioIndex(): AudioIndexData {
   if (audioIndex) return audioIndex;
   
   try {
-    const indexPath = path.join(process.cwd(), "src", "data", "audio-index.json");
+    const indexPath = path.join(process.cwd(), "data", "audio-index.json");
     if (fs.existsSync(indexPath)) {
       const data = fs.readFileSync(indexPath, "utf-8");
       audioIndex = JSON.parse(data);

@@ -8,7 +8,7 @@ import { formatFrenchDate } from '../../utils/formatDate';
 export async function getStaticPaths() {
   const newsEntries = await getCollection('news');
   return newsEntries.map((entry) => ({
-    params: { slug: entry.slug },
+    params: { slug: entry.id },
     props: { entry },
   }));
 }
@@ -18,7 +18,7 @@ const { entry } = Astro.props;
 const formattedDate = formatFrenchDate(entry.data.date);
 ---
 <LayoutPlayer title={`Lecture : ${entry.data.title}`}>
-  <AudioPlayer title={entry.data.title} slug={entry.slug} formattedDate={formattedDate} />
+  <AudioPlayer title={entry.data.title} slug={entry.id} formattedDate={formattedDate} />
   
   <div class="flex items-center justify-center w-full">
     <div class="w-full">

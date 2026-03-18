@@ -10,19 +10,19 @@ export const GET = async (context) => {
   const sortedNews = sortNewsByDateDesc(news);
 
   const items = await Promise.all(sortedNews.map(async (post) => {
-    if (!hasAudio(post.slug)) {
+    if (!hasAudio(post.id)) {
       return null;
     }
 
-    const audioUrl = getAudioUrl(context.site, post.slug);
-    const audioSize = getAudioSize(post.slug);
-    const contentHtml = await marked.parse(post.body);
+    const audioUrl = getAudioUrl(context.site, post.id);
+    const audioSize = getAudioSize(post.id);
+    const contentHtml = await marked.parse(post.body || "");
 
     return {
       title: post.data.title,
       pubDate: post.data.date,
       description: `Actualités du ${formatFrenchDateShort(post.data.date)}`,
-      link: `/news/${post.slug}/`,
+      link: `/news/${post.id}/`,
       enclosure: {
         url: audioUrl,
         length: audioSize,

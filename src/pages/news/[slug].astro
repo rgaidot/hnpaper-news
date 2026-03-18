@@ -1,5 +1,5 @@
 ---
-import { getCollection } from 'astro:content';
+import { getCollection, render } from 'astro:content';
 import TTSPlayer from '../../components/TTSPlayer.astro';
 import AudioPlayer from '../../components/AudioPlayer.astro';
 import TagList from '../../components/TagList.astro';
@@ -14,7 +14,7 @@ export async function getStaticPaths() {
   const sortedNews = sortNewsByDateDesc(newsEntries);
 
   return sortedNews.map((entry, index) => ({
-    params: { slug: entry.slug },
+    params: { slug: entry.id },
     props: {
       entry,
       nextPost: index - 1 >= 0 ? sortedNews[index - 1] : null,
@@ -24,13 +24,13 @@ export async function getStaticPaths() {
 }
 
 const { entry, nextPost, prevPost } = Astro.props;
-const { Content } = await entry.render();
+const { Content } = await render(entry);
 
 const formattedDate = formatFrenchDate(entry.data.date);
 
-const readingTime = getReadingTimeMinutes(entry.body);
+const readingTime = getReadingTimeMinutes(entry.body || "");
 
-const audioFileExists = hasAudio(entry.slug);
+const audioFileExists = hasAudio(entry.id);
 ---
 
 <Layout title={entry.data.title}>
@@ -45,7 +45,7 @@ const audioFileExists = hasAudio(entry.slug);
         <TagList tags={entry.data.tags} centered={true} />
       </div>
       <div class="border-t-4 border-b-4 border-double border-stone-300">
-        <TTSPlayer title={entry.data.title} readingTime={readingTime} slug={entry.slug} />
+        <TTSPlayer title={entry.data.title} readingTime={readingTime} slug={entry.id} />
       </div>
     </header>
 
@@ -75,7 +75,7 @@ const audioFileExists = hasAudio(entry.slug);
         {
           prevPost ? (
             <a
-              href={`/news/${prevPost.slug}`}
+              href={`/news/${prevPost.id}`}
               class="hover:underline text-center sm:text-left"
             >
               &larr; Précédent
@@ -90,7 +90,7 @@ const audioFileExists = hasAudio(entry.slug);
         {
           nextPost ? (
             <a
-              href={`/news/${nextPost.slug}`}
+              href={`/news/${nextPost.id}`}
               class="hover:underline text-center sm:text-right"
             >
               Suivant &rarr;
@@ -103,5 +103,5 @@ const audioFileExists = hasAudio(entry.slug);
     </div>
   </article>
 
-  {audioFileExists && <AudioPlayer title={entry.data.title} slug={entry.slug} formattedDate={formattedDate} />}
+  {audioFileExists && <AudioPlayer title={entry.data.title} slug={entry.id} formattedDate={formattedDate} />}
 </Layout>

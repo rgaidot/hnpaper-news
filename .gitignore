@@ -31,6 +31,8 @@ public/pagefind/
 tts_server/
 
 public/audio/
+data/audio/
+data/audio-index.json
 *.mp3
 *.vtt
 *.json
