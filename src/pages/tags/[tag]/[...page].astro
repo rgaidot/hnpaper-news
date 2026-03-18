@@ -52,7 +52,7 @@ const displayTag = originalTag || tag;
         <article class="break-inside-avoid w-full flex flex-col bg-white p-6 md:p-8 rounded-[1rem] shadow-sm border border-stone-200/80 hover:shadow-md hover:border-stone-300 transition-all text-left">
           <div class="mb-4 text-xs font-bold tracking-widest text-stone-500 uppercase border-b border-stone-100 pb-2 flex justify-between w-full">
             <span>{formatFrenchDateShort(post.data.date)}</span>
-            <span>{formatReadingTimeMinutes(getReadingTimeMinutes(post.body))}</span>
+            <span>{formatReadingTimeMinutes(getReadingTimeMinutes(post.body || ""))}</span>
           </div>
 
           <div class="mb-4">
@@ -60,13 +60,13 @@ const displayTag = originalTag || tag;
           </div>
 
           <p class="text-stone-700 font-serif text-base lg:text-lg leading-relaxed mb-6 flex-grow line-clamp-6 text-justify">
-            {post.body.split("---")[0]?.replace(/^#+\s/, "")}
+            {(post.body || "").split("---")[0]?.replace(/^#+\s/, "")}
           </p>
 
           <ul class="mt-auto pt-6 border-t border-stone-100 text-sm font-sans font-bold tracking-wider text-stone-500 !mb-0 list-none pl-0">
             <li>
               <a
-                href={`/news/${post.slug}`}
+                href={`/news/${post.id}`}
                 class="text-stone-900 underline decoration-1 underline-offset-4 hover:decoration-2 transition-all font-medium"
               >
                 Lire <span aria-hidden="true">&rarr;</span>

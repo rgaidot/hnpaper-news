@@ -5,8 +5,8 @@ import { glob } from "glob";
 import { EdgeTTS } from "node-edge-tts";
 import { S3Client, PutObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 
-const NEWS_DIR = "src/content/news";
-const AUDIO_DIR = "public/audio";
+const NEWS_DIR = "data/news";
+const AUDIO_DIR = "data/audio";
 const VOICE = "fr-FR-VivienneMultilingualNeural";
 
 const c = {
@@ -478,7 +478,7 @@ async function generateAudio() {
   await Promise.all(activePromises);
 
   // Write audio-index.json
-  const dataDir = path.join(process.cwd(), "src", "data");
+  const dataDir = path.join(process.cwd(), "data");
   if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
   fs.writeFileSync(path.join(dataDir, "audio-index.json"), JSON.stringify(indexData, null, 2));
 

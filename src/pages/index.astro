@@ -1,5 +1,5 @@
 ---
-import { getCollection } from "astro:content";
+import { getCollection, render } from "astro:content";
 import TTSPlayer from "../components/TTSPlayer.astro";
 import AudioPlayer from "../components/AudioPlayer.astro";
 import TagList from "../components/TagList.astro";
@@ -16,14 +16,14 @@ const latestPost = getLatestNews(sortedNews);
 let Content, formattedDate, readingTime, audioFileExists;
 
 if (latestPost) {
-  const rendered = await latestPost.render();
+  const rendered = await render(latestPost);
   Content = rendered.Content;
 
   formattedDate = formatFrenchDate(latestPost.data.date);
 
-  readingTime = getReadingTimeMinutes(latestPost.body);
+  readingTime = getReadingTimeMinutes(latestPost.body || "");
 
-  audioFileExists = hasAudio(latestPost.slug);
+  audioFileExists = hasAudio(latestPost.id);
 }
 ---
 
@@ -45,7 +45,7 @@ if (latestPost) {
               <TTSPlayer
                 title={latestPost.data.title}
                 readingTime={readingTime}
-                slug={latestPost.slug}
+                slug={latestPost.id}
               />
             </div>
           </header>
@@ -66,5 +66,5 @@ if (latestPost) {
       </div>
     )
   }
-  {latestPost && audioFileExists && <AudioPlayer title={latestPost.data.title} slug={latestPost.slug} formattedDate={formattedDate} />}
+  {latestPost && audioFileExists && <AudioPlayer title={latestPost.data.title} slug={latestPost.id} formattedDate={formattedDate} />}
 </Layout>
