@@ -1,0 +1,30 @@
+---
+interface Props {
+  fallback: string;
+}
+
+const { fallback } = Astro.props;
+---
+
+<span data-current-date>{fallback}</span>
+
+<script is:inline>
+  const updateCurrentDate = () => {
+    document.querySelectorAll('[data-current-date]').forEach((element) => {
+      element.textContent = new Intl.DateTimeFormat('fr-FR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }).format(new Date());
+    });
+  };
+
+  document.addEventListener('astro:page-load', updateCurrentDate);
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateCurrentDate, { once: true });
+  } else {
+    updateCurrentDate();
+  }
+</script>
