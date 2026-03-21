@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { pwaInfo } from 'virtual:pwa-info';
+import CurrentDate from '../components/CurrentDate.astro';
 import Search from '../components/Search.astro';
 import { formatFrenchDateLong } from '../utils/formatDate';
 
@@ -50,9 +51,7 @@ const { title } = Astro.props;
       <div
         class="border-b border-stone-900 border-t border-stone-900 py-2 flex justify-between items-center font-serif font-bold text-xs sm:text-sm uppercase tracking-widest text-stone-800"
       >
-        <span
-          >{formatFrenchDateLong(new Date())}</span
-        >
+        <CurrentDate fallback={formatFrenchDateLong(new Date())} />
         <div class="flex items-center gap-4">
           <Search />
           <span><a href="/news" class="hover:underline">Archives</a></span>
