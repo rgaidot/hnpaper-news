@@ -8,6 +8,10 @@
     "build": "astro build && pagefind --site dist && cp -r dist/pagefind public/",
     "preview": "astro preview",
     "astro": "astro",
+    "test:e2e": "playwright test",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui-host 127.0.0.1 --ui-port 9323",
     "lint": "biome lint .",
     "format": "biome format --write .",
     "check": "biome check .",
@@ -25,6 +29,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.13",
+    "@playwright/test": "^1.54.2",
     "@tailwindcss/typography": "^0.5.19",
     "@vite-pwa/astro": "^1.2.0",
     "front-matter": "^4.0.2",
