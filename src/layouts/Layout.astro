@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import { pwaInfo } from 'virtual:pwa-info';
 import CurrentDate from '../components/CurrentDate.astro';
+import PostHogAnalytics from '../components/PostHogAnalytics.astro';
 import Search from '../components/Search.astro';
 import { formatFrenchDateLong } from '../utils/formatDate';
 
@@ -34,7 +35,7 @@ const { title } = Astro.props;
         document.body.appendChild(script);
       })();
     </script>
-    <script defer src="https://cloud.umami.is/script.js" data-website-id="64ee671d-6f2a-437b-9941-094f636a26f8" />
+    <PostHogAnalytics />
     <title>{title}</title>
   </head>
   <body class="flex flex-col min-h-screen">

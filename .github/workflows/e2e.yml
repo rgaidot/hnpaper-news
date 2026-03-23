@@ -16,6 +16,9 @@ permissions:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    env:
+      PUBLIC_POSTHOG_HOST: ${{ secrets.PUBLIC_POSTHOG_HOST }}
+      PUBLIC_POSTHOG_KEY: ${{ secrets.PUBLIC_POSTHOG_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

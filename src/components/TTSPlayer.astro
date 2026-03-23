@@ -65,6 +65,14 @@ const { title, slug, readingTime } = Astro.props;
         if (container.hasAttribute('data-tts-initialized')) return;
         
         container.setAttribute('data-tts-initialized', 'true');
+
+        container.querySelector('.download-audio')?.addEventListener('click', () => {
+          window.posthog?.capture?.('tts_open_full_player_clicked', {
+            slug: container.getAttribute('data-slug') || '',
+            title: container.getAttribute('data-title') || '',
+            source: 'article_tts_player',
+          });
+        });
         
         const createController = () => {
           new TTSController({

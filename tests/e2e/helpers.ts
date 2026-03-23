@@ -1,7 +1,9 @@
 import { test, type Page } from "@playwright/test";
 
 export async function blockThirdParty(page: Page) {
-  await page.route(/^https?:\/\/(www\.gstatic\.com|cloud\.umami\.is)\//, (route) =>
+  await page.route(
+    /^https?:\/\/(www\.gstatic\.com|us(-assets)?\.i\.posthog\.com|eu(-assets)?\.i\.posthog\.com|app\.posthog\.com)\//,
+    (route) =>
     route.abort(),
   );
 }

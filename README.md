@@ -157,6 +157,8 @@ Prerequisites:
     - `R2_SECRET_ACCESS_KEY`: Your R2 API secret key.
     - `R2_BUCKET_NAME`: The name of your R2 bucket.
     - `PUBLIC_R2_URL`: The public domain of your R2 bucket (e.g., `https://pub-xxxxxx.r2.dev`).
+    - `PUBLIC_POSTHOG_KEY`: Your PostHog project API key for client-side analytics.
+    - `PUBLIC_POSTHOG_HOST`: Your PostHog ingestion host (e.g. `https://eu.i.posthog.com` or your self-hosted domain).
 
     If these credentials are provided, the script will fetch missing audio from R2, generate it if necessary, upload it, and then delete the local file. It will output an index file at `data/audio-index.json`. If credentials are omitted, it will fall back to saving files directly in the `data/audio/` directory.
 
@@ -184,6 +186,120 @@ Prerequisites:
     # Check and fix issues
     make check-fix
     ```
+
+## 📊 Analytics
+
+Client-side analytics are sent to PostHog only when both `PUBLIC_POSTHOG_KEY` and `PUBLIC_POSTHOG_HOST` are defined.
+
+### Search events
+
+- `search_performed`: Triggered after a Pagefind query completes. Properties: `query`, `results_count`.
+- `search_result_clicked`: Triggered when a user clicks a search result. Properties: `query`, `result_index`, `visible_results`, `total_results`, `target_url`.
+- `search_load_more_clicked`: Triggered when the user expands the visible search result list. Properties: `query`, `visible_results`, `total_results`.
+- `search_cleared`: Triggered when the search field is cleared with the clear button. Properties: `query`, `results_count`.
+
+### Audio and player events
+
+- `tts_play_started`: Triggered when article playback starts. Properties: `slug`, `title`, `player_surface`, `playback_mode`.
+- `tts_paused`: Triggered when playback is paused. Properties: `slug`, `title`, `player_surface`, plus `current_time_seconds` or `current_char_index` depending on playback mode.
+- `tts_resumed`: Triggered when playback resumes. Properties: `slug`, `title`, `player_surface`, plus `current_time_seconds` or `current_char_index`.
+- `tts_stopped`: Triggered when playback is stopped before completion. Properties: `slug`, `title`, `player_surface`.
+- `tts_playback_completed`: Triggered when audio reaches the end. Properties: `slug`, `title`, `player_surface`, `duration_seconds`.
+- `tts_speed_changed`: Triggered when playback speed changes. Properties: `slug`, `title`, `player_surface`, `playback_mode`, `speed`.
+- `tts_seeked_from_text`: Triggered when playback jumps from a clicked word in the article. Properties: `slug`, `title`, `player_surface`, `selected_word`, plus `target_time_seconds` or `current_char_index`.
+- `tts_open_full_player_clicked`: Triggered when the article player opens the dedicated `/player/:slug` page. Properties: `slug`, `title`, `source`.
+- `tts_cast_requested`: Triggered when the cast action is requested. Properties: `slug`, `title`, `player_surface`.
+- `tts_cast_connected`: Triggered after a cast session is connected. Properties: `slug`, `title`, `player_surface`.
+
+### Shared analytics properties
+
+- `slug`: Article identifier used in URLs.
+- `title`: Article title.
+- `player_surface`: Playback UI origin, either `article_player` or `full_player`.
+- `playback_mode`: Active playback transport, either `audio`, `cast`, or `speech_synthesis`.
+
+### Recommended dashboards
+
+- Search usage: track `search_performed` over time, average `results_count`, and top `query` values.
+- Search effectiveness: build a funnel from `search_performed` to `search_result_clicked` and segment by `query`.
+- Audio engagement: compare `tts_play_started`, `tts_paused`, `tts_resumed`, `tts_stopped`, and `tts_playback_completed`.
+- Playback completion by article: break down `tts_playback_completed` by `slug` and compare it to `tts_play_started`.
+- Player surface adoption: split `tts_play_started` by `player_surface` to see whether users listen more from article pages or the dedicated player.
+- Speed preferences: chart `tts_speed_changed` by `speed` to understand listening habits.
+- Cast usage: monitor `tts_cast_requested` and `tts_cast_connected` as a simple cast conversion funnel.
+
+### Dashboard definitions
+
+#### Dashboard 1: Search
+
+Name: `Search Performance`
+
+Widgets to create:
+
+- `Searches over time`
+  - Event: `search_performed`
+  - Display: line chart
+  - Interval: daily
+- `Top queries`
+  - Event: `search_performed`
+  - Breakdown: `query`
+  - Display: bar chart
+  - Limit: 20
+- `Searches with zero results`
+  - Event: `search_performed`
+  - Filter: `results_count = 0`
+  - Display: single value
+- `Search result click-through`
+  - Insight type: funnel
+  - Step 1: `search_performed`
+  - Step 2: `search_result_clicked`
+  - Breakdown optional: `query`
+
+#### Dashboard 2: Audio
+
+Name: `Audio Engagement`
+
+Widgets to create:
+
+- `Starts vs completions`
+  - Events: `tts_play_started`, `tts_playback_completed`
+  - Display: line or bar
+  - Interval: daily
+- `Completion rate funnel`
+  - Funnel:
+    - Step 1: `tts_play_started`
+    - Step 2: `tts_playback_completed`
+  - Breakdown: `player_surface`
+- `Pause / resume / stop`
+  - Events: `tts_paused`, `tts_resumed`, `tts_stopped`
+  - Display: stacked bar
+- `Top listened articles`
+  - Event: `tts_play_started`
+  - Breakdown: `slug`
+  - Display: bar chart
+
+#### Dashboard 3: Player & Cast
+
+Name: `Player Behavior`
+
+Widgets to create:
+
+- `Article player vs full player`
+  - Event: `tts_play_started`
+  - Breakdown: `player_surface`
+  - Display: pie or bar
+- `Playback mode usage`
+  - Event: `tts_play_started`
+  - Breakdown: `playback_mode`
+  - Display: bar
+- `Speed preferences`
+  - Event: `tts_speed_changed`
+  - Breakdown: `speed`
+  - Display: bar
+- `Cast conversion`
+  - Funnel:
+    - Step 1: `tts_cast_requested`
+    - Step 2: `tts_cast_connected`
 
 ## 📦 Build & Deployment
 
