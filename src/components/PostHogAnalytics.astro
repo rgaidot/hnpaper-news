@@ -1,0 +1,101 @@
+---
+const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY;
+const posthogHost = import.meta.env.PUBLIC_POSTHOG_HOST;
+---
+
+<script is:inline define:vars={{ posthogKey, posthogHost }}>
+  (() => {
+    if (!posthogKey || !posthogHost || typeof window === "undefined") {
+      return;
+    }
+
+    const resolveAssetHost = (host) => {
+      if (host.includes("us.i.posthog.com")) {
+        return host.replace("us.i.posthog.com", "us-assets.i.posthog.com");
+      }
+
+      if (host.includes("eu.i.posthog.com")) {
+        return host.replace("eu.i.posthog.com", "eu-assets.i.posthog.com");
+      }
+
+      return host;
+    };
+
+    ((documentRef, posthogRef) => {
+      if (posthogRef.__SV) {
+        return;
+      }
+
+      window.posthog = posthogRef;
+      posthogRef._i = [];
+      posthogRef.init = (token, config, name) => {
+        const instanceName = name ?? "posthog";
+        const instance = name ? (posthogRef[name] = []) : posthogRef;
+
+        instance.people = instance.people || [];
+        instance.toString = (isPeople) => {
+          let label = "posthog";
+          if (instanceName !== "posthog") {
+            label += `.${instanceName}`;
+          }
+
+          if (!isPeople) {
+            label += " (stub)";
+          }
+
+          return label;
+        };
+        instance.people.toString = () => `${instance.toString(1)}.people (stub)`;
+
+        const methods = [
+          "capture",
+          "identify",
+          "alias",
+          "people.set",
+          "people.set_once",
+          "register",
+          "register_once",
+          "unregister",
+          "opt_in_capturing",
+          "opt_out_capturing",
+          "has_opted_in_capturing",
+          "has_opted_out_capturing",
+          "reset",
+          "isFeatureEnabled",
+          "onFeatureFlags",
+          "onSessionId",
+        ];
+
+        for (const method of methods) {
+          const parts = method.split(".");
+          const target = parts.length === 2 ? instance[parts[0]] : instance;
+          const methodName = parts.length === 2 ? parts[1] : method;
+
+          target[methodName] = (...args) => {
+            target.push([methodName, ...args]);
+          };
+        }
+
+        const script = documentRef.createElement("script");
+        script.type = "text/javascript";
+        script.async = true;
+        script.crossOrigin = "anonymous";
+        script.src = `${resolveAssetHost(config.api_host)}/static/array.js`;
+
+        const firstScript = documentRef.getElementsByTagName("script")[0];
+        firstScript.parentNode.insertBefore(script, firstScript);
+
+        posthogRef._i.push([token, config, name]);
+      };
+
+      posthogRef.__SV = 1;
+    })(document, window.posthog || []);
+
+    window.posthog.init(posthogKey, {
+      api_host: posthogHost,
+      capture_pageview: true,
+      capture_pageleave: true,
+      person_profiles: "identified_only",
+    });
+  })();
+</script>

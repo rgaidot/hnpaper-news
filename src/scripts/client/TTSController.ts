@@ -51,6 +51,7 @@ export class TTSController {
   private castSession: any = null;
   private remotePlayer: any = null;
   private remotePlayerController: any = null;
+  private completionTracked = false;
 
   constructor(options: TTSOptions) {
     this.container = options.container;
@@ -325,7 +326,13 @@ export class TTSController {
     this.audioElement.addEventListener("pause", () =>
       this.updateState("paused"),
     );
-    this.audioElement.addEventListener("ended", () => this.stop());
+    this.audioElement.addEventListener("ended", () => {
+      this.track("tts_playback_completed", {
+        duration_seconds: this.audioElement?.duration,
+      });
+      this.completionTracked = true;
+      this.stop();
+    });
     this.audioElement.addEventListener("error", () =>
       this.updateState("error"),
     );
@@ -461,6 +468,7 @@ export class TTSController {
       this.castBtns.forEach((btn) => {
         btn.classList.remove("hidden");
         btn.addEventListener("click", () => {
+          this.track("tts_cast_requested");
           this.castContext.requestSession().then(
             (s: any) => console.log("Cast session ok", s),
             (e: any) => console.error("Cast session failed", e),
@@ -482,6 +490,7 @@ export class TTSController {
             this.stop();
             this.loadRemoteMedia();
             this.updateState("playing");
+            this.track("tts_cast_connected");
             this.castBtns.forEach((b) => b.classList.add("text-blue-500"));
           } else {
             this.castSession = null;
@@ -572,6 +581,7 @@ export class TTSController {
     }
 
     if (this.audioElement) {
+      this.completionTracked = false;
       this.updateState("playing");
       this.requestWakeLock();
       this.setupMediaSession();
@@ -579,6 +589,9 @@ export class TTSController {
         .play()
         .catch((e) => console.error("Audio play failed", e));
       this.updateRemainingTimeFromAudio();
+      this.track("tts_play_started", {
+        playback_mode: this.getPlaybackMode(),
+      });
       return;
     }
 
@@ -590,6 +603,7 @@ export class TTSController {
     if (this.sentences.length === 0) return;
 
     this.updateState("playing");
+    this.completionTracked = false;
     this.requestWakeLock();
     this.setupMediaSession();
     if (this.silentAudio) {
@@ -600,6 +614,9 @@ export class TTSController {
     }
     this.updateRemainingTimeFromText();
     this.speakSentence();
+    this.track("tts_play_started", {
+      playback_mode: this.getPlaybackMode(),
+    });
   }
 
   public pause() {
@@ -612,6 +629,9 @@ export class TTSController {
       this.updateState("paused");
       this.releaseWakeLock();
       this.updateRemainingTimeFromAudio();
+      this.track("tts_paused", {
+        current_time_seconds: this.audioElement.currentTime,
+      });
       return;
     }
     if (this.state === "playing") {
@@ -623,6 +643,9 @@ export class TTSController {
       }
       window.speechSynthesis.cancel();
       this.updateRemainingTimeFromText();
+      this.track("tts_paused", {
+        current_char_index: this.currentCharIndex,
+      });
     }
   }
 
@@ -636,6 +659,9 @@ export class TTSController {
       this.requestWakeLock();
       this.audioElement.play();
       this.updateRemainingTimeFromAudio();
+      this.track("tts_resumed", {
+        current_time_seconds: this.audioElement.currentTime,
+      });
       return;
     }
     if (this.state === "paused") {
@@ -649,6 +675,9 @@ export class TTSController {
       }
       this.updateRemainingTimeFromText();
       this.speakSentence();
+      this.track("tts_resumed", {
+        current_char_index: this.currentCharIndex,
+      });
     }
   }
 
@@ -676,6 +705,10 @@ export class TTSController {
     this.currentSentenceIndex = 0;
     this.currentCharIndex = 0;
     this.resetRemainingTime();
+    if (!this.completionTracked) {
+      this.track("tts_stopped");
+    }
+    this.completionTracked = false;
   }
 
   private playFromElement(element: HTMLElement) {
@@ -718,6 +751,10 @@ export class TTSController {
         this.audioElement.play();
         this.updateState("playing");
         this.updateRemainingTimeFromAudio();
+        this.track("tts_seeked_from_text", {
+          target_time_seconds: this.vttCues[targetCueIndex].start,
+          selected_word: element.textContent || "",
+        });
       }
       return;
     }
@@ -734,6 +771,10 @@ export class TTSController {
       this.updateState("playing");
       this.updateRemainingTimeFromText();
       this.speakSentence();
+      this.track("tts_seeked_from_text", {
+        current_char_index: this.currentCharIndex,
+        selected_word: element.textContent || "",
+      });
     }
   }
 
@@ -937,6 +978,31 @@ export class TTSController {
       this.speakSentence();
     }
     this.updateRemainingTime();
+    this.track("tts_speed_changed", {
+      speed: newRate,
+      playback_mode: this.getPlaybackMode(),
+    });
+  }
+
+  private getPlaybackMode() {
+    if (this.remotePlayer?.isConnected) return "cast";
+    if (this.audioElement) return "audio";
+    return "speech_synthesis";
+  }
+
+  private getPlayerSurface() {
+    return this.container.id === "player-container"
+      ? "full_player"
+      : "article_player";
+  }
+
+  private track(eventName: string, properties: Record<string, unknown> = {}) {
+    (window as any).posthog?.capture?.(eventName, {
+      slug: this.slug,
+      title: this.titleText.replace(/\.\s*$/, ""),
+      player_surface: this.getPlayerSurface(),
+      ...properties,
+    });
   }
 
   private setupMediaSession() {

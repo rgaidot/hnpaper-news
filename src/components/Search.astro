@@ -26,6 +26,9 @@
   const searchInput = document.getElementById("pagefind-search");
   const searchResults = document.getElementById("pagefind-search-results");
   const clearSearchBtn = document.getElementById("clear-search-btn");
+  const track = (eventName, properties = {}) => {
+    window.posthog?.capture?.(eventName, properties);
+  };
 
   let pagefind;
   let currentResults = [];
@@ -80,9 +83,26 @@
       loadMoreBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         visibleCount += 5;
+        track("search_load_more_clicked", {
+          query: currentQuery,
+          visible_results: visibleCount,
+          total_results: currentResults.length,
+        });
         renderResults();
       });
     }
+
+    searchResults.querySelectorAll("a[href]").forEach((link, index) => {
+      link.addEventListener("click", () => {
+        track("search_result_clicked", {
+          query: currentQuery,
+          result_index: index,
+          visible_results: Math.min(visibleCount, currentResults.length),
+          total_results: currentResults.length,
+          target_url: link.getAttribute("href"),
+        });
+      });
+    });
   }
 
   searchInput.addEventListener("input", async (event) => {
@@ -108,6 +128,10 @@
     
     currentResults = search.results;
     visibleCount = 5;
+    track("search_performed", {
+      query,
+      results_count: currentResults.length,
+    });
     
     if (currentResults.length > 0) {
       await renderResults();
@@ -117,8 +141,14 @@
   });
 
   clearSearchBtn.addEventListener("click", () => {
+    track("search_cleared", {
+      query: currentQuery,
+      results_count: currentResults.length,
+    });
     searchInput.value = "";
     currentQuery = "";
+    currentResults = [];
+    visibleCount = 5;
     searchResults.innerHTML = "";
     searchResults.classList.add("hidden");
     clearSearchBtn.classList.add("hidden");
