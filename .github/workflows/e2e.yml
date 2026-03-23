@@ -1,0 +1,42 @@
+name: E2E Tests
+
+on:
+  push:
+    branches:
+      - main
+      - "feat/*"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Prepare audio placeholders for static build
+        run: |
+          mkdir -p data/audio
+          if [ ! -f data/audio-index.json ]; then
+            printf '{}' > data/audio-index.json
+          fi
+
+      - name: Install Playwright browser
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run e2e tests
+        run: bun run test:e2e

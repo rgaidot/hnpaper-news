@@ -36,3 +36,5 @@ data/audio-index.json
 *.mp3
 *.vtt
 *.json
+
+test-results

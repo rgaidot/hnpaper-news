@@ -1,4 +1,4 @@
-.PHONY: install publish dev preview lint format check check-fix
+.PHONY: install publish dev preview lint format check check-fix e2e e2e-debug e2e-headed e2e-ui
 
 APP := hnpaper-news
 GIT_SHA := ${shell git rev-parse --short=7 HEAD}
@@ -14,6 +14,18 @@ dev:
 
 preview:
 	bun run preview
+
+e2e:
+	bun run test:e2e
+
+e2e-debug:
+	bun run test:e2e:debug
+
+e2e-headed:
+	bun run test:e2e:headed
+
+e2e-ui:
+	bun run test:e2e:ui
 
 lint:
 	bun run lint
