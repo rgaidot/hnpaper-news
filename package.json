@@ -24,7 +24,6 @@
     "astro": "^5.16.15",
     "date-fns": "^4.1.0",
     "js-yaml": "^4.1.1",
-    "marked": "^17.0.3",
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
@@ -35,6 +34,7 @@
     "front-matter": "^4.0.2",
     "glob": "^13.0.6",
     "node-edge-tts": "^1.2.10",
+    "ora": "^9.3.0",
     "pagefind": "^1.4.0",
     "workbox-window": "^7.4.0"
   }

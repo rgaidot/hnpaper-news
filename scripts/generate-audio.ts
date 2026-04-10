@@ -77,9 +77,9 @@ async function uploadToR2(s3: S3Client, filePath: string, key: string, contentTy
   await s3.send(command);
 }
 
-let progressLine = "";
-const globalStart = Date.now();
-const completionTimes: number[] = [];
+const ESC = "\x1b";
+const hideCursor = `${ESC}[?25l`;
+const showCursor = `${ESC}[?25h`;
 
 function formatDuration(ms: number): string {
   const s = Math.floor(ms / 1000);
@@ -89,74 +89,166 @@ function formatDuration(ms: number): string {
   return rem > 0 ? `${m}m${rem}s` : `${m}m`;
 }
 
-function drawProgress(line: string) {
-  progressLine = line;
-  process.stdout.write(`\r${line.padEnd(process.stdout.columns ?? 120)}`);
-}
+class ProgressTUI {
+  private activeTasks = new Map<string, string>();
+  private logs: string[] = [];
+  private completedFiles = 0;
+  private totalFiles = 0;
+  private linesRendered = 0;
+  private interval: Timer | null = null;
+  private startTime = Date.now();
+  private completionTimes: number[] = [];
+  private stopped = false;
+  public stats = { success: 0, skipped: 0, failed: 0 };
 
-function printLog(output: string) {
-  process.stdout.write(`\r${" ".repeat(process.stdout.columns ?? 120)}\r`);
-  console.log(output);
-  if (progressLine)
-    process.stdout.write(
-      `\r${progressLine.padEnd(process.stdout.columns ?? 120)}`,
-    );
-}
+  constructor() {}
 
-const log = {
-  info: (tag: string, msg: string) =>
-    printLog(`${c.cyan}${c.bold}[${tag}]${c.reset} ${msg}`),
+  public init(total: number) {
+    this.totalFiles = total;
+    this.startTime = Date.now();
+    process.stdout.write(hideCursor);
+    process.on("SIGINT", () => this.cleanup());
+    process.on("SIGTERM", () => this.cleanup());
+    this.interval = setInterval(() => this.render(), 150);
+  }
 
-  success: (tag: string, msg: string) =>
-    printLog(
-      `${c.green}${c.bold}[${tag}]${c.reset} ${c.green}✔${c.reset} ${msg}`,
-    ),
+  private cleanup() {
+    process.stdout.write(showCursor);
+    if (this.interval) clearInterval(this.interval);
+    process.exit();
+  }
 
-  warn: (tag: string, msg: string) =>
-    printLog(
-      `${c.yellow}${c.bold}[${tag}]${c.reset} ${c.yellow}⚠ ${msg}${c.reset}`,
-    ),
+  public stop() {
+    if (this.stopped) return;
+    this.stopped = true;
+    if (this.interval) clearInterval(this.interval);
+    this.render();
+    process.stdout.write(showCursor + "\n");
+  }
 
-  error: (tag: string, msg: string, err?: unknown) => {
-    printLog(`${c.red}${c.bold}[${tag}]${c.reset} ${c.red}✘ ${msg}${c.reset}`);
-    if (err)
-      printLog(`${c.gray}  └─ ${(err as Error).message ?? err}${c.reset}`);
-  },
+  public addSuccess(ms: number) {
+    this.completionTimes.push(ms);
+    this.stats.success++;
+    this.completedFiles++;
+    this.render();
+  }
 
-  step: (tag: string, step: number, total: number, msg: string) => {
-    const pct = Math.round((step / total) * 100);
-    printLog(
-      `${c.blue}[${tag}]${c.reset} ${c.dim}(${step}/${total} · ${pct}%)${c.reset} ${msg}`,
-    );
-  },
+  public addSkipped() {
+    this.stats.skipped++;
+    this.completedFiles++;
+    this.render();
+  }
 
-  progress: (current: number, total: number, msg: string) => {
-    const pct = Math.round((current / total) * 100);
-    const filled = Math.floor(pct / 5);
-    const bar = `${c.green}${"█".repeat(filled)}${c.reset}${c.gray}${"░".repeat(20 - filled)}${c.reset}`;
+  public addFailed() {
+    this.stats.failed++;
+    this.completedFiles++;
+    this.render();
+  }
 
-    const elapsed = Date.now() - globalStart;
-    const elapsedStr = `${c.dim}elapsed ${formatDuration(elapsed)}${c.reset}`;
+  public setTask(id: string, text: string) {
+    this.activeTasks.set(id, text);
+    this.render();
+  }
 
+  public removeTask(id: string) {
+    this.activeTasks.delete(id);
+    this.render();
+  }
+
+  public info(tag: string, msg: string) {
+    this.logs.push(`${c.cyan}${c.bold}[${tag}]${c.reset} ${msg}`);
+    if (this.logs.length > 6) this.logs.shift();
+    this.render();
+  }
+
+  public success(tag: string, msg: string) {
+    this.logs.push(`${c.green}${c.bold}[${tag}]${c.reset} ${c.green}✔${c.reset} ${msg}`);
+    if (this.logs.length > 6) this.logs.shift();
+    this.render();
+  }
+
+  public warn(tag: string, msg: string) {
+    this.logs.push(`${c.yellow}${c.bold}[${tag}]${c.reset} ${c.yellow}⚠ ${msg}${c.reset}`);
+    if (this.logs.length > 6) this.logs.shift();
+    this.render();
+  }
+
+  public error(tag: string, msg: string, err?: unknown) {
+    this.logs.push(`${c.red}${c.bold}[${tag}]${c.reset} ${c.red}✘ ${msg}${c.reset}`);
+    if (err) this.logs.push(`${c.gray}  └─ ${(err as Error).message ?? err}${c.reset}`);
+    if (this.logs.length > 6) this.logs.shift();
+    this.render();
+  }
+
+  public section(msg: string) {
+    this.logs.push(`\n${c.bold}${c.cyan}━━━ ${msg} ━━━${c.reset}\n`);
+    this.render();
+  }
+
+  public getTotalElapsed() {
+    return Date.now() - this.startTime;
+  }
+
+  public getAvgMs() {
+    return this.completionTimes.length > 0
+      ? this.completionTimes.reduce((a, b) => a + b, 0) / this.completionTimes.length
+      : 0;
+  }
+
+  private render() {
+    if (this.stopped && this.linesRendered === -1) return;
+    
+    if (this.linesRendered > 0) {
+      process.stdout.write(`${ESC}[${this.linesRendered}A${ESC}[0J`);
+    }
+
+    const lines: string[] = [];
+
+    for (const msg of this.logs) {
+      lines.push(msg);
+    }
+    if (this.logs.length > 0 && this.activeTasks.size > 0) lines.push("");
+
+    const maxTasks = 12;
+    let count = 0;
+    for (const [id, text] of Array.from(this.activeTasks.entries())) {
+      if (count >= maxTasks) {
+         lines.push(`  ${c.dim}... and ${this.activeTasks.size - maxTasks} more files${c.reset}`);
+         break;
+      }
+      lines.push(`  ${c.blue}▶${c.reset} ${c.bold}${id.padEnd(25)}${c.reset} ${c.dim}—${c.reset} ${text}`);
+      count++;
+    }
+    if (this.activeTasks.size > 0) lines.push("");
+
+    const elapsed = Date.now() - this.startTime;
     let etaStr = "";
-    if (completionTimes.length >= 2) {
-      const avgMs =
-        completionTimes.reduce((a, b) => a + b, 0) / completionTimes.length;
-      const remaining = total - current;
+    if (this.completionTimes.length >= 2) {
+      const avgMs = this.completionTimes.reduce((a, b) => a + b, 0) / this.completionTimes.length;
+      const remaining = this.totalFiles - this.completedFiles;
       const etaMs = avgMs * remaining;
-      const speed = (completionTimes.length / (elapsed / 60000)).toFixed(1);
+      const speed = (this.completionTimes.length / (elapsed / 60000)).toFixed(1);
       etaStr = ` ${c.dim}· ETA ${formatDuration(etaMs)} · ${speed}/min${c.reset}`;
     }
 
-    const line = `${c.cyan}${c.bold}[${current}/${total}]${c.reset} ${bar} ${c.bold}${pct}%${c.reset} ${elapsedStr}${etaStr}  ${c.dim}${msg}${c.reset}`;
-    drawProgress(line);
-  },
+    const pct = this.totalFiles > 0 ? Math.round((this.completedFiles / this.totalFiles) * 100) : 100;
+    const filled = Math.floor(pct / 5);
+    const bar = `${c.green}${"█".repeat(filled)}${c.reset}${c.gray}${"░".repeat(20 - filled)}${c.reset}`;
+    
+    if (this.totalFiles > 0) {
+      lines.push(`${c.cyan}${c.bold}[${this.completedFiles}/${this.totalFiles}]${c.reset} ${bar} ${c.bold}${pct}%${c.reset}  ${c.dim}elapsed ${formatDuration(elapsed)}${c.reset}${etaStr}`);
+    }
 
-  section: (msg: string) =>
-    console.log(`\n${c.bold}${c.cyan}━━━ ${msg} ━━━${c.reset}\n`),
-};
+    process.stdout.write(lines.join("\n") + "\n");
+    this.linesRendered = lines.length;
+    
+    if (this.stopped) {
+       this.linesRendered = -1;
+    }
+  }
+}
 
-const stats = { success: 0, skipped: 0, failed: 0 };
+const tui = new ProgressTUI();
 
 if (!fs.existsSync(AUDIO_DIR)) {
   fs.mkdirSync(AUDIO_DIR, { recursive: true });
@@ -225,6 +317,12 @@ function cleanMarkdown(markdown: string): string {
   return text.trim();
 }
 
+function computeHash(content: string): string {
+  const hasher = new Bun.CryptoHasher("md5");
+  hasher.update(content);
+  return hasher.digest("hex");
+}
+
 function chunkText(text: string, maxLength = 2000): string[] {
   if (text.length <= maxLength) return [text];
 
@@ -264,7 +362,7 @@ async function processFile(
   totalFiles: number,
   s3: S3Client | null,
   r2Objects: Record<string, number>,
-  indexData: Record<string, { size: number }>
+  indexData: Record<string, { size: number, hash?: string }>
 ) {
   const filename = path.basename(file, ".md");
   const audioPath = path.join(AUDIO_DIR, `${filename}.mp3`);
@@ -272,31 +370,31 @@ async function processFile(
   const mp3Key = `${filename}.mp3`;
   const vttKey = `${filename}.vtt`;
 
+  const content = fs.readFileSync(file, "utf-8");
+  const parsed = fm(content);
+  const title = (parsed.attributes as any).title || "";
+  const textToRead = `${title}. \n\n${cleanMarkdown(parsed.body)}`;
+  
+  const contentHash = computeHash(textToRead);
   const existsOnR2 = r2Objects[mp3Key] !== undefined && r2Objects[vttKey] !== undefined;
   const existsLocally = fs.existsSync(audioPath) && fs.existsSync(vttPath);
+  
+  const previousHash = indexData[filename]?.hash;
+  const hasChanged = previousHash !== contentHash;
 
-  if (!force && (existsOnR2 || (!s3 && existsLocally))) {
-    stats.skipped++;
-    log.progress(
-      stats.success + stats.skipped + stats.failed,
-      totalFiles,
-      `${filename} — Already generated, skipped.`,
-    );
+  if (!force && !hasChanged && (existsOnR2 || (!s3 && existsLocally))) {
+    tui.addSkipped();
     
     // Add to index
     if (existsOnR2) {
-      indexData[filename] = { size: r2Objects[mp3Key] };
+      indexData[filename] = { size: r2Objects[mp3Key], hash: contentHash };
     } else if (existsLocally) {
-      indexData[filename] = { size: fs.statSync(audioPath).size };
+      indexData[filename] = { size: fs.statSync(audioPath).size, hash: contentHash };
     }
     return;
   }
 
-  log.progress(
-    stats.success + stats.skipped + stats.failed,
-    totalFiles,
-    `Starting ${filename}${force ? " (forced)" : ""}`
-  );
+  tui.setTask(filename, "Starting...");
   const startTime = Date.now();
 
   const tts = new EdgeTTS({
@@ -304,11 +402,6 @@ async function processFile(
     timeout: 60000,
     saveSubtitles: true,
   });
-
-  const content = fs.readFileSync(file, "utf-8");
-  const parsed = fm(content);
-  const title = (parsed.attributes as any).title || "";
-  const textToRead = `${title}. \n\n${cleanMarkdown(parsed.body)}`;
 
   const chunks = chunkText(textToRead);
 
@@ -332,7 +425,7 @@ async function processFile(
         fs.writeFileSync(vttPath, jsonToVtt(jsonContent));
         fs.unlinkSync(jsonPath);
       } else {
-        log.warn(filename, "Subtitle JSON file not found.");
+        tui.warn(filename, "Subtitle JSON file not found.");
       }
     } else {
       fs.writeFileSync(audioPath, Buffer.alloc(0));
@@ -347,7 +440,7 @@ async function processFile(
             break;
           } catch (e) {
             attempts++;
-            log.warn(
+            tui.warn(
               filename,
               `Attempt ${attempts}/3 failed for segment ${i + 1}.`,
             );
@@ -383,7 +476,7 @@ async function processFile(
             );
             fs.unlinkSync(tempJsonPath);
           } else {
-            log.warn(filename, `Subtitle JSON not found for segment ${i + 1}.`);
+            tui.warn(filename, `Subtitle JSON not found for segment ${i + 1}.`);
           }
 
           fs.unlinkSync(tempPath);
@@ -405,7 +498,7 @@ async function processFile(
     }
 
     // Add to index
-    indexData[filename] = { size: fs.statSync(audioPath).size };
+    indexData[filename] = { size: fs.statSync(audioPath).size, hash: contentHash };
 
     // Clean up local files if uploaded
     if (s3) {
@@ -414,22 +507,12 @@ async function processFile(
     }
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-    completionTimes.push(Date.now() - startTime);
-    log.success(filename, `Generated ${s3 ? "& Uploaded " : ""}in ${c.bold}${elapsed}s${c.reset}.`);
-    stats.success++;
-    log.progress(
-      stats.success + stats.skipped + stats.failed,
-      totalFiles,
-      `${filename} — Generated ${s3 ? "and uploaded " : ""}in ${elapsed}s.`
-    );
+    tui.addSuccess(Date.now() - startTime);
+    tui.removeTask(filename);
   } catch (err) {
-    log.error(filename, "Generation failed.", err);
-    stats.failed++;
-    log.progress(
-      stats.success + stats.skipped + stats.failed,
-      totalFiles,
-      `${filename} — Generation failed.`
-    );
+    tui.error(filename, "Generation failed.", err);
+    tui.addFailed();
+    tui.removeTask(filename);
 
     // Clean up on failure
     for (const p of [audioPath, vttPath]) {
@@ -444,22 +527,29 @@ async function processFile(
 async function generateAudio() {
   const forceRegeneration = process.argv.includes("--force") || process.argv.includes("-f");
   const files = await glob(`${NEWS_DIR}/*.md`);
-  const indexData: Record<string, { size: number }> = {};
+  const indexData: Record<string, { size: number, hash?: string }> = {};
+  
+  const indexPath = path.join(process.cwd(), "data", "audio-index.json");
+  if (fs.existsSync(indexPath)) {
+    try {
+      Object.assign(indexData, JSON.parse(fs.readFileSync(indexPath, "utf-8")));
+    } catch (err) {}
+  }
 
   const s3 = getS3Client();
   let r2Objects: Record<string, number> = {};
 
+  tui.section(`Audio generation — ${files.length} article(s)${forceRegeneration ? " · forced mode" : ""}`);
+
   if (s3) {
-    log.info("R2", "Connecting to Cloudflare R2...");
+    tui.info("R2", "Connecting to Cloudflare R2...");
     r2Objects = await listR2Objects(s3);
-    log.info("R2", `Found ${Object.keys(r2Objects).length} objects in bucket.`);
+    tui.info("R2", `Found ${Object.keys(r2Objects).length} objects in bucket.`);
   } else {
-    log.warn("R2", "Missing R2 credentials. Falling back to local audio generation.");
+    tui.warn("R2", "Missing R2 credentials. Falling back to local audio generation.");
   }
 
-  log.section(
-    `Audio generation — ${files.length} article(s)${forceRegeneration ? " · forced mode" : ""}`,
-  );
+  tui.init(files.length);
 
   const CONCURRENCY_LIMIT = s3 ? 10 : 30; // Reduce concurrency if uploading
   const activePromises = new Set<Promise<void>>();
@@ -482,19 +572,16 @@ async function generateAudio() {
   if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
   fs.writeFileSync(path.join(dataDir, "audio-index.json"), JSON.stringify(indexData, null, 2));
 
-  process.stdout.write("\n");
-  log.section("Summary");
+  tui.stop();
+  tui.section("Summary");
 
-  const totalElapsed = Date.now() - globalStart;
-  const avgMs =
-    completionTimes.length > 0
-      ? completionTimes.reduce((a, b) => a + b, 0) / completionTimes.length
-      : 0;
+  const totalElapsed = tui.getTotalElapsed();
+  const avgMs = tui.getAvgMs();
 
   console.log(
-    `  ${c.green}✔ Success  : ${stats.success}${c.reset}\n` +
-      `  ${c.gray}– Skipped  : ${stats.skipped}${c.reset}\n` +
-      `  ${c.red}✘ Failed   : ${stats.failed}${c.reset}\n` +
+    `  ${c.green}✔ Success  : ${tui.stats.success}${c.reset}\n` +
+      `  ${c.gray}– Skipped  : ${tui.stats.skipped}${c.reset}\n` +
+      `  ${c.red}✘ Failed   : ${tui.stats.failed}${c.reset}\n` +
       `\n` +
       `  ${c.dim}Total time : ${c.reset}${c.bold}${formatDuration(totalElapsed)}${c.reset}\n` +
       (avgMs > 0
