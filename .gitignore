@@ -28,8 +28,6 @@ public/pagefind/
 
 *part*.mp3.*
 
-tts_server/
-
 public/audio/
 data/audio/
 data/audio-index.json
@@ -37,4 +35,8 @@ data/audio-index.json
 *.vtt
 *.json
 
+tts-service/target/
+
 test-results
+
+prompts
