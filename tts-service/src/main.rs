@@ -244,11 +244,19 @@ async fn main() -> Result<()> {
         println!("⚠ Missing R2 credentials. Falling back to local audio generation.\n");
     }
 
+    let is_ci = std::env::var("CI").is_ok();
+    if is_ci {
+        println!("ℹ CI environment detected, using simplified logging.");
+    }
+
+    println!("ℹ Initializing progress manager...");
     let progress_manager = Arc::new(ProgressManager::new(files.len()));
     let concurrency_limit = if s3_client.is_some() { CONCURRENCY_LIMIT_TTS } else { CONCURRENCY_LIMIT_LOCAL };
 
     let r2_objects_arc = Arc::new(r2_objects);
     let failed_articles_arc = Arc::new(tokio::sync::Mutex::new(Vec::new()));
+
+    println!("ℹ Starting concurrent processing of {} files (limit: {})...", files.len(), concurrency_limit);
 
     stream::iter(files)
         .for_each_concurrent(concurrency_limit, |file_path| {
@@ -261,8 +269,12 @@ async fn main() -> Result<()> {
             let filename = file_path.file_stem().unwrap().to_string_lossy().to_string();
 
             async move {
+                if is_ci {
+                    println!("  → Starting: {}", filename);
+                }
                 if let Err(e) = process_file(
-                    file_path, // Transfer ownership here, avoiding a clone inside the closure
+                    file_path,
+ // Transfer ownership here, avoiding a clone inside the closure
                     force_regeneration,
                     s3_client_ref,
                     &r2_objects_ref,
