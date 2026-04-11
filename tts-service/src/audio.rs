@@ -53,7 +53,10 @@ pub async fn synthesize_audio(
     text: &str,
     current_time_offset: u64,
 ) -> anyhow::Result<(Vec<u8>, Vec<SubtitleItem>)> {
-    let res = tts.synthesize(text, options.clone()).await?;
+    let timeout_duration = std::time::Duration::from_secs(30);
+    let res = tokio::time::timeout(timeout_duration, tts.synthesize(text, options.clone()))
+        .await
+        .map_err(|_| anyhow::anyhow!("TTS synthesis timed out after 30s"))??;
 
     let mut subtitles = Vec::new();
     for boundary in res.boundaries {

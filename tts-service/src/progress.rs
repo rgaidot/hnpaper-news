@@ -15,22 +15,34 @@ pub struct ProgressManager {
     total_files: usize,
     global_start: Instant,
     completion_times: Arc<Mutex<Vec<u64>>>,
+    is_ci: bool,
 }
 
 impl ProgressManager {
     pub fn new(total_files: usize) -> Self {
+        let is_ci = std::env::var("CI").is_ok();
         let multi = MultiProgress::new();
-        let global_style = ProgressStyle::with_template(
-            "{spinner:.green.bold} {prefix:.bold.cyan} [{elapsed_precise:.dim}] {wide_bar:.cyan/blue} {pos}/{len} ({percent}%) | {msg}",
-        )
-        .unwrap()
-        .progress_chars("██░");
+        
+        let global_style = if is_ci {
+            ProgressStyle::with_template(
+                "{prefix:.bold.cyan} {pos}/{len} ({percent}%) | {msg}",
+            ).unwrap()
+        } else {
+            ProgressStyle::with_template(
+                "{spinner:.green.bold} {prefix:.bold.cyan} [{elapsed_precise:.dim}] {wide_bar:.cyan/blue} {pos}/{len} ({percent}%) | {msg}",
+            )
+            .unwrap()
+            .progress_chars("██░")
+        };
 
         let global_bar = multi.add(ProgressBar::new(total_files as u64));
         global_bar.set_style(global_style);
         global_bar.set_prefix("Overall Progress");
         global_bar.set_message("Starting...");
-        global_bar.enable_steady_tick(std::time::Duration::from_millis(100));
+        
+        if !is_ci {
+            global_bar.enable_steady_tick(std::time::Duration::from_millis(100));
+        }
 
         Self {
             multi,
@@ -43,6 +55,7 @@ impl ProgressManager {
             total_files,
             global_start: Instant::now(),
             completion_times: Arc::new(Mutex::new(Vec::new())),
+            is_ci,
         }
     }
 
@@ -66,6 +79,10 @@ impl ProgressManager {
     }
 
     pub fn log_success(&self, filename: &str, msg: &str) {
+        if self.is_ci {
+            println!("  ✔ {}: {}", filename, msg);
+            return;
+        }
         let _ = self.multi.println(format!(
             "  {} {}: {}",
             console::style("✔").green(),
@@ -75,6 +92,10 @@ impl ProgressManager {
     }
 
     pub fn log_skipped(&self, filename: &str) {
+        if self.is_ci {
+            println!("  - {}: Already up to date", filename);
+            return;
+        }
         let _ = self.multi.println(format!(
             "  {} {}: Already up to date",
             console::style("-").dim(),
@@ -104,6 +125,9 @@ impl ProgressManager {
     }
 
     pub fn create_article_bar(&self, filename: &str, steps: u64) -> ProgressBar {
+        if self.is_ci {
+            return ProgressBar::hidden();
+        }
         let pb = self.multi.add(ProgressBar::new(steps));
         let style = ProgressStyle::with_template(
             "  {spinner:.yellow} {prefix:.bold.blue} {bar:.white.dim} {pos}/{len} | {msg}",
@@ -118,8 +142,9 @@ impl ProgressManager {
     }
 
     pub fn remove_article_bar(&self, pb: &ProgressBar) {
-        pb.finish_and_clear();
-        // Optionnellement, retirer de la multiprogress
+        if !self.is_ci {
+            pb.finish_and_clear();
+        }
     }
 
     pub fn stop(&self) {

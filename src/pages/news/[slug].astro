@@ -35,17 +35,13 @@ const audioFileExists = hasAudio(entry.id);
 
 <Layout title={entry.data.title}>
   <article class="mx-auto max-w-5xl pb-24" data-pagefind-body data-pagefind-sort={`date:${entry.data.date.toISOString()}`}>
-    <header
-      class="mb-10 text-center"
-    >
-      <div
-        class="flex flex-col items-center space-y-2 text-stone-600 text-sm uppercase tracking-widest pb-8"
-      >
-        <span class="text-2xl font-bold font-serif text-stone-600 uppercase tracking-wides" data-pagefind-meta="title">{formattedDate}</span>
+    <header class="mb-10 text-center">
+      <div class="flex flex-col items-center gap-4">
+        <div class="flex flex-col md:flex-row items-center justify-center gap-x-6 gap-y-2 border-t-4 border-b-4 border-double border-stone-300 py-2 w-full">
+          <span class="text-2xl font-bold font-serif text-stone-600 uppercase tracking-widest" data-pagefind-meta="title">{formattedDate}</span>
+          <TTSPlayer title={entry.data.title} readingTime={readingTime} slug={entry.id} />
+        </div>
         <TagList tags={entry.data.tags} centered={true} />
-      </div>
-      <div class="border-t-4 border-b-4 border-double border-stone-300">
-        <TTSPlayer title={entry.data.title} readingTime={readingTime} slug={entry.id} />
       </div>
     </header>
 
