@@ -340,6 +340,8 @@ function cleanMarkdown(markdown: string): string {
   text = text.replace(/&/g, " et "); // Translate ampersand to 'et' to avoid &amp;
   text = text.replace(/</g, ""); // Strip isolated < to avoid &lt;
   text = text.replace(/>/g, ""); // Strip isolated > to avoid &gt;
+  text = text.replace(/[()\[\]{}]/g, ""); // Strip parentheses and brackets to prevent TTS offset bugs
+  text = text.replace(/_/g, " "); // Replace underscores with spaces
   text = text.replace(/[\u2018\u2019]/g, "’"); // Standardize smart single quotes/apostrophes
   text = text.replace(/'/g, "’"); // Use typographic apostrophe to prevent &apos;
   text = text.replace(/<!--[\s\S]*?-->/g, "");
@@ -377,8 +379,7 @@ function chunkText(text: string, maxLength = 2000): string[] {
 
   const chunks: string[] = [];
   let currentChunk = "";
-  const sentenceRegex = /[^.!?]+([.!?]+(\s+|$))?/g;
-  const sentences = text.match(sentenceRegex) || [text];
+  const sentences = text.split(/(?<=[.!?])(?=\s+)/);
 
   for (const sentence of sentences) {
     if (!sentence.trim()) continue;
