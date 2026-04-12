@@ -103,6 +103,14 @@ pub fn clean_markdown(markdown: &str) -> String {
     text = text.replace("<", "");
     text = text.replace(">", "");
 
+    text = text.replace("(", "");
+    text = text.replace(")", "");
+    text = text.replace("[", "");
+    text = text.replace("]", "");
+    text = text.replace("{", "");
+    text = text.replace("}", "");
+    text = text.replace("_", " ");
+
     // Utiliser l'apostrophe typographique (’) au lieu de la droite (') pour éviter que
     // edge-tts-rust ne l'échappe en &apos; (ce qui fait bugger la prononciation).
     text = r.quotes_single.replace_all(&text, "’").to_string();
@@ -154,7 +162,10 @@ pub fn chunk_text(text: &str, max_length: usize) -> Vec<String> {
         
         let candidate = &remaining[..end_idx];
         
-        let mut split_at = candidate.rfind(|c| c == '.' || c == '!' || c == '?' || c == '\n');
+        let mut split_at = candidate.rfind(". ")
+            .or_else(|| candidate.rfind("! "))
+            .or_else(|| candidate.rfind("? "))
+            .or_else(|| candidate.rfind('\n'));
         
         if let Some(idx) = split_at {
             split_at = Some(idx + 1);
