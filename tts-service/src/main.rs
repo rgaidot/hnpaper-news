@@ -80,7 +80,7 @@ async fn process_file(
         ..SpeakOptions::default()
     };
 
-    let chunks = chunk_text(&text_to_read, 2000);
+    let chunks = chunk_text(&text_to_read, 1200);
     let mut all_subtitles = Vec::new();
     let mut current_time_offset = 0;
 
