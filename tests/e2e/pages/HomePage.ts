@@ -9,7 +9,7 @@ export class HomePage {
   }
 
   get archivesLink(): Locator {
-    return this.page.getByRole("link", { name: "Archives" });
+    return this.page.getByRole("link", { name: "Archives" }).first();
   }
 
   get mainArticle(): Locator {
