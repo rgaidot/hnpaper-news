@@ -11,7 +11,7 @@ use edge_tts_rust::{Boundary, EdgeTtsClient, SpeakOptions};
 use futures::stream::{self, StreamExt};
 use gray_matter::engine::YAML;
 use gray_matter::Matter;
-use progress::{ProgressManager, format_duration};
+use progress::{format_duration, ProgressManager};
 use s3::{get_s3_client, list_r2_objects, upload_to_r2};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -36,12 +36,12 @@ async fn process_file(
     let vtt_key = format!("{}.vtt", filename);
 
     let content = tokio::fs::read_to_string(&file_path).await?;
-    
+
     // CPU-bound task: parsing and cleaning markdown
     let (text_to_read, content_hash) = tokio::task::spawn_blocking(move || {
         let matter = Matter::<YAML>::new();
         let parsed = matter.parse(&content);
-        
+
         let title = parsed
             .data
             .as_ref()
@@ -52,7 +52,8 @@ async fn process_file(
         let text = format!("{}. \n\n{}", title, clean_markdown(&parsed.content));
         let hash = compute_hash(&text);
         (text, hash)
-    }).await?;
+    })
+    .await?;
 
     let exists_on_r2 = r2_objects.contains_key(&mp3_key) && r2_objects.contains_key(&vtt_key);
     let exists_locally = audio_path.exists() && vtt_path.exists();
@@ -88,7 +89,7 @@ async fn process_file(
 
     if chunks.len() == 1 {
         article_bar.set_message("generating TTS");
-        
+
         let mut attempts = 0;
         let (audio_bytes, subtitles) = loop {
             match audio::synthesize_audio(&tts, &speech_config, &chunks[0], 0).await {
@@ -98,7 +99,10 @@ async fn process_file(
                     if attempts >= MAX_RETRIES {
                         anyhow::bail!("TTS failed after {} attempts: {}", MAX_RETRIES, e);
                     }
-                    tokio::time::sleep(tokio::time::Duration::from_millis(1000 * 2_u64.pow(attempts))).await;
+                    tokio::time::sleep(tokio::time::Duration::from_millis(
+                        1000 * 2_u64.pow(attempts),
+                    ))
+                    .await;
                 }
             }
         };
@@ -112,32 +116,31 @@ async fn process_file(
         for (i, chunk) in chunks.iter().enumerate() {
             article_bar.set_message(format!("TTS segment {}/{}", i + 1, chunks.len()));
 
-            let temp_path = audio_dir.join(format!("{}_part{}.mp3", filename, i));
             let mut attempts = 0;
 
             let (audio_bytes, mut subtitles) = loop {
-                match audio::synthesize_audio(&tts, &speech_config, chunk, current_time_offset).await {
+                match audio::synthesize_audio(&tts, &speech_config, chunk, current_time_offset)
+                    .await
+                {
                     Ok(res) => break res,
                     Err(e) => {
                         attempts += 1;
                         if attempts >= MAX_RETRIES {
                             anyhow::bail!("TTS failed after {} attempts: {}", MAX_RETRIES, e);
                         }
-                        tokio::time::sleep(tokio::time::Duration::from_millis(1000 * 2_u64.pow(attempts))).await;
+                        tokio::time::sleep(tokio::time::Duration::from_millis(
+                            1000 * 2_u64.pow(attempts),
+                        ))
+                        .await;
                     }
                 }
             };
 
-            // Calculate duration using ffprobe (External process)
-            // We write the temporary file just to let ffprobe read it. 
-            // Improvement: could we get duration from the audio bytes directly?
-            tokio::fs::write(&temp_path, &audio_bytes).await?;
-            let duration_ms = (audio::get_audio_duration(temp_path.to_str().unwrap()).await * 1000.0) as u64;
-            
+            let duration_ms = audio::get_audio_duration_from_bytes(&audio_bytes);
+
             final_audio.extend_from_slice(&audio_bytes);
             all_subtitles.append(&mut subtitles);
 
-            let _ = tokio::fs::remove_file(&temp_path).await;
             current_time_offset += duration_ms;
             article_bar.inc(1);
             tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
@@ -153,16 +156,33 @@ async fn process_file(
 
     if let Some(client) = s3_client {
         article_bar.set_message("uploading mp3");
-        upload_to_r2(client, r2_bucket, audio_path.to_str().unwrap(), &mp3_key, "audio/mpeg").await?;
+        upload_to_r2(
+            client,
+            r2_bucket,
+            audio_path.to_str().unwrap(),
+            &mp3_key,
+            "audio/mpeg",
+        )
+        .await?;
         article_bar.inc(1);
 
         article_bar.set_message("uploading vtt");
-        upload_to_r2(client, r2_bucket, vtt_path.to_str().unwrap(), &vtt_key, "text/vtt").await?;
+        upload_to_r2(
+            client,
+            r2_bucket,
+            vtt_path.to_str().unwrap(),
+            &vtt_key,
+            "text/vtt",
+        )
+        .await?;
         article_bar.inc(1);
     }
 
-    let final_size = tokio::fs::metadata(&audio_path).await.map(|m| m.len()).unwrap_or(0);
-    
+    let final_size = tokio::fs::metadata(&audio_path)
+        .await
+        .map(|m| m.len())
+        .unwrap_or(0);
+
     // Final lock to update index
     {
         let mut index_data = index_data_arc.lock().await;
@@ -181,7 +201,13 @@ async fn process_file(
     }
 
     progress.increment_success(start_time.elapsed().as_millis() as u64);
-    progress.log_success(&filename, &format!("Done in {}", format_duration(start_time.elapsed().as_millis() as u64)));
+    progress.log_success(
+        &filename,
+        &format!(
+            "Done in {}",
+            format_duration(start_time.elapsed().as_millis() as u64)
+        ),
+    );
     progress.remove_article_bar(&article_bar);
 
     Ok(())
@@ -193,24 +219,46 @@ async fn main() -> Result<()> {
     let _ = rustls::crypto::ring::default_provider().install_default();
 
     let args: Vec<String> = std::env::args().collect();
-    let force_regeneration = args.contains(&"--force".to_string()) || args.contains(&"-f".to_string());
+    let force_regeneration =
+        args.contains(&"--force".to_string()) || args.contains(&"-f".to_string());
+
+    let mut files = Vec::new();
+    let arg_files: Vec<PathBuf> = args
+        .iter()
+        .skip(1)
+        .filter(|arg| !arg.starts_with('-'))
+        .map(|arg| {
+            if arg.ends_with(".md") {
+                PathBuf::from(arg)
+            } else {
+                let stem = Path::new(arg)
+                    .file_stem()
+                    .unwrap_or_default()
+                    .to_string_lossy();
+                PathBuf::from(format!("{}/{}.md", NEWS_DIR, stem))
+            }
+        })
+        .collect();
+
+    let has_args = !arg_files.is_empty();
+
+    if has_args {
+        files = arg_files;
+    } else {
+        for path in glob::glob(&format!("{}/*.md", NEWS_DIR))?.flatten() {
+            files.push(path);
+        }
+    }
 
     tokio::fs::create_dir_all(AUDIO_DIR).await?;
 
-    if force_regeneration {
+    if force_regeneration && !has_args {
         let mut entries = tokio::fs::read_dir(AUDIO_DIR).await?;
         while let Some(entry) = entries.next_entry().await? {
             let path = entry.path();
             if path.is_file() {
                 let _ = tokio::fs::remove_file(path).await;
             }
-        }
-    }
-
-    let mut files = Vec::new();
-    for entry in glob::glob(&format!("{}/*.md", NEWS_DIR))? {
-        if let Ok(path) = entry {
-            files.push(path);
         }
     }
 
@@ -230,7 +278,15 @@ async fn main() -> Result<()> {
     let mut r2_objects = HashMap::new();
     let r2_bucket = std::env::var("R2_BUCKET_NAME").unwrap_or_else(|_| "hnpaper-audio".to_string());
 
-    println!("\n━━━ Audio Generation — {} article(s){} ━━━\n", files.len(), if force_regeneration { " · forced mode" } else { "" });
+    println!(
+        "\n━━━ Audio Generation — {} article(s){} ━━━\n",
+        files.len(),
+        if force_regeneration {
+            " · forced mode"
+        } else {
+            ""
+        }
+    );
 
     if let Some(ref client) = s3_client {
         println!("ℹ Connecting to Cloudflare R2...");
@@ -251,12 +307,20 @@ async fn main() -> Result<()> {
 
     println!("ℹ Initializing progress manager...");
     let progress_manager = Arc::new(ProgressManager::new(files.len()));
-    let concurrency_limit = if s3_client.is_some() { CONCURRENCY_LIMIT_TTS } else { CONCURRENCY_LIMIT_LOCAL };
+    let concurrency_limit = if s3_client.is_some() {
+        CONCURRENCY_LIMIT_TTS
+    } else {
+        CONCURRENCY_LIMIT_LOCAL
+    };
 
     let r2_objects_arc = Arc::new(r2_objects);
     let failed_articles_arc = Arc::new(tokio::sync::Mutex::new(Vec::new()));
 
-    println!("ℹ Starting concurrent processing of {} files (limit: {})...", files.len(), concurrency_limit);
+    println!(
+        "ℹ Starting concurrent processing of {} files (limit: {})...",
+        files.len(),
+        concurrency_limit
+    );
 
     stream::iter(files)
         .for_each_concurrent(concurrency_limit, |file_path| {
@@ -274,7 +338,7 @@ async fn main() -> Result<()> {
                 }
                 if let Err(e) = process_file(
                     file_path,
- // Transfer ownership here, avoiding a clone inside the closure
+                    // Transfer ownership here, avoiding a clone inside the closure
                     force_regeneration,
                     s3_client_ref,
                     &r2_objects_ref,

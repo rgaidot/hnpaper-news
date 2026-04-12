@@ -22,11 +22,10 @@ impl ProgressManager {
     pub fn new(total_files: usize) -> Self {
         let is_ci = std::env::var("CI").is_ok();
         let multi = MultiProgress::new();
-        
+
         let global_style = if is_ci {
-            ProgressStyle::with_template(
-                "{prefix:.bold.cyan} {pos}/{len} ({percent}%) | {msg}",
-            ).unwrap()
+            ProgressStyle::with_template("{prefix:.bold.cyan} {pos}/{len} ({percent}%) | {msg}")
+                .unwrap()
         } else {
             ProgressStyle::with_template(
                 "{spinner:.green.bold} {prefix:.bold.cyan} [{elapsed_precise:.dim}] {wide_bar:.cyan/blue} {pos}/{len} ({percent}%) | {msg}",
@@ -39,7 +38,7 @@ impl ProgressManager {
         global_bar.set_style(global_style);
         global_bar.set_prefix("Overall Progress");
         global_bar.set_message("Starting...");
-        
+
         if !is_ci {
             global_bar.enable_steady_tick(std::time::Duration::from_millis(100));
         }
@@ -159,7 +158,7 @@ impl ProgressManager {
         println!("  – Skipped  : {}", stats.skipped);
         println!("  ✘ Failed   : {}\n", stats.failed);
         println!("  Total time : {}", format_duration(elapsed_ms));
-        
+
         let times = self.completion_times.lock().unwrap();
         if !times.is_empty() {
             let avg_ms: u64 = times.iter().sum::<u64>() / (times.len() as u64);

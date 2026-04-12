@@ -5,7 +5,7 @@ Welcome to the **HNPaper News** repository, an automated news archive from [HNPa
 ## ✨ Features
 
 - **Daily Summaries**: Automated archives of HNPaper news.
-- **Audio Player (TTS)**: Integrated text-to-speech functionality to listen to articles. MP3 audio files are automatically generated for each article by the `generate-audio.ts` script, which are then used by the TTS player and for Google Cast.
+- **Audio Player (TTS)**: Integrated text-to-speech functionality to listen to articles. MP3 audio files are automatically generated for each article by the Rust `tts-service` (and TypeScript fallback scripts), which are then used by the TTS player and for Google Cast.
 - **Word-Level Highlighting**: VTT subtitles enable per-word highlighting during audio playback.
 - **Google Cast Support**: Stream article audio to Google Cast devices (e.g., Google Home, Chromecast) with subtitle support.
 - **Podcast Feed**: RSS feed that exposes every article with an MP3 enclosure.
@@ -46,6 +46,7 @@ Welcome to the **HNPaper News** repository, an automated news archive from [HNPa
 │   ├── scripts/      # Client-side scripts (TTS, Navigation)
 │   ├── styles/       # Global CSS
 │   └── utils/        # Shared helpers (dates, reading time, audio paths)
+├── tts-service/      # Rust backend for high-performance audio generation
 ├── astro.config.mjs  # Astro configuration
 ├── makefile          # Shortcuts for build and deployment
 ├── nginx.conf        # Optimized Nginx configuration

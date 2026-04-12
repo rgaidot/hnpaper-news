@@ -8,6 +8,8 @@ pkgs.mkShell {
   buildInputs = with pkgs; [
     cargo
     rustc
+    clippy
+    rustfmt
     gcc
     openssl
   ];
