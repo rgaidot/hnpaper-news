@@ -2,10 +2,14 @@ use crate::types::SubtitleItem;
 use edge_tts_rust::{EdgeTtsClient, SpeakOptions};
 
 pub fn get_audio_duration_from_bytes(bytes: &[u8]) -> u64 {
-    // Edge TTS returns MP3 at constant 48kbps (6000 bytes/sec)
-    // We add a tiny margin or use the exact bitrate if known.
-    // Calculations: 48000 bits/sec = 6000 bytes/sec.
-    (bytes.len() as f64 / 6000.0 * 1000.0) as u64
+    // We use mp3_duration for exact duration to avoid drift in subtitles (VTT).
+    match mp3_duration::from_read(&mut std::io::Cursor::new(bytes)) {
+        Ok(duration) => duration.as_millis() as u64,
+        Err(_) => {
+            // Fallback just in case
+            (bytes.len() as f64 / 6000.0 * 1000.0) as u64
+        }
+    }
 }
 
 pub fn format_time(ms: u64) -> String {
