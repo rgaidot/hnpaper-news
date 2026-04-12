@@ -2,10 +2,12 @@ mod audio;
 mod config;
 mod progress;
 mod s3;
+mod server;
 mod text;
 mod types;
 
 use anyhow::Result;
+use clap::{Parser, Subcommand};
 use config::*;
 use edge_tts_rust::{Boundary, EdgeTtsClient, SpeakOptions};
 use futures::stream::{self, StreamExt};
@@ -18,6 +20,30 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use text::{chunk_text, clean_markdown, compute_hash};
 use types::{ArticleFrontMatter, AudioIndex};
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Commands>,
+
+    /// Force regeneration of all audio files
+    #[arg(short, long)]
+    force: bool,
+
+    /// Specific files to process
+    files: Vec<String>,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Start the web server for interactive TTS generation
+    Serve {
+        /// Port to listen on
+        #[arg(short, long, default_value_t = 3000)]
+        port: u16,
+    },
+}
 
 async fn process_file(
     file_path: PathBuf,
@@ -218,15 +244,17 @@ async fn main() -> Result<()> {
     let _ = dotenvy::dotenv();
     let _ = rustls::crypto::ring::default_provider().install_default();
 
-    let args: Vec<String> = std::env::args().collect();
-    let force_regeneration =
-        args.contains(&"--force".to_string()) || args.contains(&"-f".to_string());
+    let cli = Cli::parse();
+
+    if let Some(Commands::Serve { port }) = cli.command {
+        return server::start_server(port).await;
+    }
+
+    let force_regeneration = cli.force;
 
     let mut files = Vec::new();
-    let arg_files: Vec<PathBuf> = args
+    let arg_files: Vec<PathBuf> = cli.files
         .iter()
-        .skip(1)
-        .filter(|arg| !arg.starts_with('-'))
         .map(|arg| {
             if arg.ends_with(".md") {
                 PathBuf::from(arg)
@@ -338,7 +366,6 @@ async fn main() -> Result<()> {
                 }
                 if let Err(e) = process_file(
                     file_path,
-                    // Transfer ownership here, avoiding a clone inside the closure
                     force_regeneration,
                     s3_client_ref,
                     &r2_objects_ref,
