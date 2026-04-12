@@ -1,0 +1,99 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import TagList from '../../components/TagList.astro';
+import { formatFrenchDate } from '../../utils/formatDate';
+import { formatReadingTimeMinutes, getReadingTimeMinutes } from '../../utils/readingTime';
+import { sortNewsByDateDesc } from '../../utils/news';
+
+export async function getStaticPaths({ paginate }) {
+  const allNews = await getCollection('news');
+  const sortedNews = sortNewsByDateDesc(allNews);
+  return paginate(sortedNews, { pageSize: 30 });
+}
+
+const { page } = Astro.props;
+
+const titleRegex = /^Actualités du\s+\d{2}\/\d{2}\/\d{4}\s+à\s+\d{2}:\d{2}/;
+---
+
+<Layout title={`Liste des articles - Page ${page.currentPage}`}>
+  <div class="mb-12 border-b-4 border-double border-stone-300 pb-4 text-center">
+    <h2
+      class="text-2xl font-bold font-serif text-stone-600 uppercase tracking-widest"
+    >
+      Index des Articles
+    </h2>
+    <span
+      class="text-xs font-sans font-bold uppercase tracking-widest text-stone-500 mt-2 block"
+      >Page {page.currentPage} sur {page.lastPage}</span
+    >
+  </div>
+
+  <div class="flex flex-col gap-6 max-w-4xl mx-auto w-full">
+    {
+      page.data.map((post) => (
+        <article class="relative group w-full flex flex-col bg-white p-6 md:p-8 rounded-[1rem] shadow-sm border border-stone-200/80 hover:shadow-md hover:border-stone-300 transition-all text-left">
+          <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-x-4 mb-4 border-b border-stone-100 pb-4">
+            <div class="flex-grow">
+              <h3 class="font-serif text-xl font-bold text-stone-900 leading-tight">
+                <a href={`/news/${post.id}`} class="before:absolute before:inset-0 relative capitalize">
+                  {formatFrenchDate(post.data.date)}
+                </a>
+              </h3>
+            </div>
+            <div class="flex items-center gap-2 mt-2 sm:mt-0 text-sm font-sans text-stone-500 whitespace-nowrap shrink-0 relative z-10">
+              <span class="text-xs italic">{formatReadingTimeMinutes(getReadingTimeMinutes(post.body || ""))}</span>
+            </div>
+          </div>
+
+          <p class="text-stone-700 font-serif text-base leading-relaxed mb-6 line-clamp-3">
+            {(post.body || "").split("---")[0]?.replace(/^#+\s/, "").trim()}
+          </p>
+
+          <div class="mt-auto relative z-10 pt-2">
+            <TagList tags={post.data.tags} />
+          </div>
+        </article>
+      ))
+    }
+  </div>
+
+  <nav
+    class="flex justify-center items-center space-x-4 mt-16 font-serif pt-8 border-t border-stone-300"
+  >
+    {
+      page.url.prev ? (
+        <a
+          href={page.url.prev}
+          class="px-6 py-2 border border-stone-900 text-stone-900 font-bold hover:bg-stone-900 hover:text-white transition-colors uppercase text-sm tracking-widest"
+        >
+          &larr; Précédent
+        </a>
+      ) : (
+        <span class="px-6 py-2 border border-stone-200 text-stone-300 uppercase text-sm tracking-widest cursor-not-allowed">
+          &larr; Précédent
+        </span>
+      )
+    }
+
+    <div class="hidden sm:flex px-4 font-bold text-stone-900">
+      Page {page.currentPage}
+    </div>
+
+    {
+      page.url.next ? (
+        <a
+          href={page.url.next}
+          class="px-6 py-2 border border-stone-900 text-stone-900 font-bold hover:bg-stone-900 hover:text-white transition-colors uppercase text-sm tracking-widest"
+        >
+          Suivant &rarr;
+        </a>
+      ) : (
+        <span class="px-6 py-2 border border-stone-200 text-stone-300 uppercase text-sm tracking-widest cursor-not-allowed">
+          Suivant &rarr;
+        </span>
+      )
+    }
+  </nav>
+</Layout>
