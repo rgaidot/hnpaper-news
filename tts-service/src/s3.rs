@@ -13,13 +13,7 @@ pub async fn get_s3_client() -> Option<Client> {
 
     let region_provider = RegionProviderChain::default_provider().or_else(Region::new("auto"));
 
-    let credentials = Credentials::new(
-        access_key,
-        secret_key,
-        None,
-        None,
-        "Static",
-    );
+    let credentials = Credentials::new(access_key, secret_key, None, None, "Static");
 
     let config = aws_config::defaults(BehaviorVersion::latest())
         .region(region_provider)
@@ -31,15 +25,15 @@ pub async fn get_s3_client() -> Option<Client> {
     Some(Client::new(&config))
 }
 
-pub async fn list_r2_objects(client: &Client, bucket: &str) -> anyhow::Result<HashMap<String, u64>> {
+pub async fn list_r2_objects(
+    client: &Client,
+    bucket: &str,
+) -> anyhow::Result<HashMap<String, u64>> {
     let mut objects = HashMap::new();
     let mut continuation_token = None;
 
     loop {
-        let mut req = client
-            .list_objects_v2()
-            .bucket(bucket)
-            .prefix("audio/");
+        let mut req = client.list_objects_v2().bucket(bucket).prefix("audio/");
 
         if let Some(token) = continuation_token {
             req = req.continuation_token(token);

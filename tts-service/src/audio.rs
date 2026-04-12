@@ -1,28 +1,11 @@
 use crate::types::SubtitleItem;
 use edge_tts_rust::{EdgeTtsClient, SpeakOptions};
-use tokio::process::Command;
 
-pub async fn get_audio_duration(file_path: &str) -> f64 {
-    let output = Command::new("ffprobe")
-        .args([
-            "-v",
-            "error",
-            "-show_entries",
-            "format=duration",
-            "-of",
-            "default=noprint_wrappers=1:nokey=1",
-            file_path,
-        ])
-        .output()
-        .await;
-
-    match output {
-        Ok(out) if out.status.success() => {
-            let s = String::from_utf8_lossy(&out.stdout);
-            s.trim().parse().unwrap_or(0.0)
-        }
-        _ => 0.0,
-    }
+pub fn get_audio_duration_from_bytes(bytes: &[u8]) -> u64 {
+    // Edge TTS returns MP3 at constant 48kbps (6000 bytes/sec)
+    // We add a tiny margin or use the exact bitrate if known.
+    // Calculations: 48000 bits/sec = 6000 bytes/sec.
+    (bytes.len() as f64 / 6000.0 * 1000.0) as u64
 }
 
 pub fn format_time(ms: u64) -> String {
@@ -59,15 +42,31 @@ pub async fn synthesize_audio(
         .map_err(|_| anyhow::anyhow!("TTS synthesis timed out after 30s"))??;
 
     let mut subtitles = Vec::new();
+    let mut previous_max_offset = 0;
+    let mut cumulative_offset = current_time_offset;
+
     for boundary in res.boundaries {
-        let start_ms = boundary.offset_ticks / 10000 + current_time_offset;
-        let end_ms = start_ms + (boundary.duration_ticks / 10000);
+        let current_offset = boundary.offset_ticks / 10000;
+        let duration = boundary.duration_ticks / 10000;
+
+        // If the offset goes backwards, it means the TTS engine started a new internal segment.
+        if current_offset < previous_max_offset && previous_max_offset > 500 {
+            cumulative_offset += previous_max_offset;
+            previous_max_offset = 0;
+        }
+
+        let start_ms = current_offset + cumulative_offset;
+        let end_ms = start_ms + duration;
 
         subtitles.push(SubtitleItem {
             part: boundary.text.clone(),
             start: start_ms,
             end: end_ms,
         });
+
+        if current_offset + duration > previous_max_offset {
+            previous_max_offset = current_offset + duration;
+        }
     }
 
     Ok((res.audio, subtitles))

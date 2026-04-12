@@ -292,7 +292,12 @@ function jsonToVtt(subtitles: any[]): string {
 function cleanMarkdown(markdown: string): string {
   let text = markdown;
   text = text.replace(/[\u201C\u201D\u00AB\u00BB]/g, ""); // Strip smart double quotes and guillemets
-  text = text.replace(/[\u2018\u2019]/g, "'"); // Standardize smart single quotes/apostrophes
+  text = text.replace(/"/g, ""); // Strip straight double quotes
+  text = text.replace(/&/g, " et "); // Translate ampersand to 'et' to avoid &amp;
+  text = text.replace(/</g, ""); // Strip isolated < to avoid &lt;
+  text = text.replace(/>/g, ""); // Strip isolated > to avoid &gt;
+  text = text.replace(/[\u2018\u2019]/g, "’"); // Standardize smart single quotes/apostrophes
+  text = text.replace(/'/g, "’"); // Use typographic apostrophe to prevent &apos;
   text = text.replace(/<!--[\s\S]*?-->/g, "");
   text = text.replace(/```[\s\S]*?```/g, "");
   text = text.replace(/`([^`]+)`/g, "$1");
@@ -526,7 +531,10 @@ async function processFile(
 
 async function generateAudio() {
   const forceRegeneration = process.argv.includes("--force") || process.argv.includes("-f");
-  const files = await glob(`${NEWS_DIR}/*.md`);
+  const argsFiles = process.argv.slice(2)
+    .filter(arg => !arg.startsWith('-'))
+    .map(arg => arg.endsWith('.md') ? arg : `${NEWS_DIR}/${path.basename(arg, '.md')}.md`);
+  const files = argsFiles.length > 0 ? argsFiles : await glob(`${NEWS_DIR}/*.md`);
   const indexData: Record<string, { size: number, hash?: string }> = {};
   
   const indexPath = path.join(process.cwd(), "data", "audio-index.json");
