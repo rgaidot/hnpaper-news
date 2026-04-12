@@ -29,7 +29,6 @@
         background-clip: text;
       }
 
-      /* Custom Scrollbar for VTT preview */
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
@@ -45,7 +44,6 @@
         background: #94a3b8;
       }
 
-      /* Audio player custom pseudo-elements styling */
       audio::-webkit-media-controls-panel {
         background-color: #f8fafc;
       }
@@ -54,7 +52,6 @@
   <body
     class="bg-slate-50 text-slate-800 min-h-screen relative overflow-x-hidden selection:bg-indigo-100 selection:text-indigo-900"
   >
-    <!-- Ambient Background blobs -->
     <div
       class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none"
     >
@@ -67,25 +64,23 @@
     </div>
 
     <div class="max-w-5xl mx-auto py-16 px-6 relative z-10">
-      <!-- Header -->
       <header class="mb-16 text-center">
         <h1 class="text-5xl font-extrabold tracking-tight mb-4 text-slate-900">
           <span class="gradient-text">Voxify</span>
         </h1>
         <p class="text-lg text-slate-500 max-w-2xl mx-auto font-medium">
-          Transformez instantanément vos articles Markdown en narrations audio
-          avec sous-titres synchronisés.
+          Transformez vos contenu Markdown en audio avec des sous-titres
+          synchronisés
         </p>
       </header>
 
       <main class="flex flex-col gap-8">
-        <!-- Top Section: Input -->
         <section class="glass-panel rounded-3xl p-8 relative">
           <div class="flex justify-between items-end mb-4">
             <label
               for="markdown"
               class="block text-sm font-bold text-slate-700 tracking-wide uppercase"
-              >Contenu Source</label
+              >Markdown</label
             >
           </div>
 
@@ -109,7 +104,7 @@
           <div class="flex gap-3 w-full sm:w-auto">
             <button
               onclick="clearText()"
-              class="flex-1 sm:flex-none px-5 py-3 rounded-xl font-semibold text-slate-600 hover:bg-slate-200/50 hover:text-slate-900 transition-all duration-200"
+              class="flex-1 sm:flex-none px-5 py-3 rounded-xl font-semibold text-slate-600 hover:bg-slate-200/50 hover:text-slate-900 transition-all duration-200 cursor-pointer"
             >
               Effacer
             </button>
@@ -119,7 +114,7 @@
               disabled
               class="flex-1 sm:flex-none relative overflow-hidden bg-slate-900 hover:bg-black text-white px-8 py-3 rounded-xl font-semibold shadow-lg shadow-slate-900/20 hover:shadow-slate-900/30 transition-all duration-300 flex items-center justify-center gap-3 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:grayscale-[0.5] group"
             >
-              <span id="btn-text">Générer l'audio</span>
+              <span id="btn-text">Générer</span>
               <div
                 id="btn-spinner"
                 class="hidden w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"
@@ -142,12 +137,10 @@
           </div>
         </div>
 
-        <!-- Bottom Section: Results (Side by side) -->
         <div
           id="result-section"
           class="hidden grid md:grid-cols-2 gap-6 opacity-0 transition-all duration-500 transform translate-y-8"
         >
-          <!-- Audio Card -->
           <div
             class="bg-white rounded-3xl p-8 shadow-xl shadow-indigo-100/50 border border-indigo-50 relative overflow-hidden flex flex-col"
           >
@@ -155,24 +148,7 @@
               class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500"
             ></div>
 
-            <h2
-              class="text-lg font-bold mb-6 text-slate-800 flex items-center gap-2"
-            >
-              <svg
-                class="w-5 h-5 text-indigo-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
-                ></path>
-              </svg>
-              Lecteur Audio
-            </h2>
+            <h2 class="text-lg font-bold mb-6 text-slate-800">Audio</h2>
 
             <audio id="audio-player" controls class="w-full mb-8"></audio>
 
@@ -259,14 +235,13 @@
             </div>
           </div>
 
-          <!-- Subtitles Card -->
           <div
             class="bg-slate-900 rounded-3xl p-8 shadow-lg border border-slate-800 relative group flex flex-col"
           >
             <h3
               class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex justify-between items-center"
             >
-              Aperçu VTT
+              VTT
             </h3>
 
             <div class="relative flex-1">
@@ -392,7 +367,6 @@ Attente de la génération...
               const container = vttPreview;
               const offsetTop = el.offsetTop - container.offsetTop;
 
-              // Scroll smoothly if element is out of optimal view
               if (
                 offsetTop < container.scrollTop ||
                 offsetTop > container.scrollTop + container.clientHeight - 60
@@ -430,7 +404,6 @@ Attente de la génération...
       function showResult() {
         clearTimeout(resultTimeout);
         resultSection.classList.remove("hidden");
-        // Timeout to allow display: block to apply before animating opacity
         setTimeout(() => {
           resultSection.classList.remove("opacity-0", "translate-y-8");
           resultSection.classList.add("opacity-100", "translate-y-0");
@@ -443,7 +416,7 @@ Attente de la génération...
         resultSection.classList.remove("opacity-100", "translate-y-0");
         resultTimeout = setTimeout(() => {
           resultSection.classList.add("hidden");
-        }, 500); // Matches the duration-500 class
+        }, 500);
       }
 
       async function generateTTS() {
@@ -458,7 +431,6 @@ Attente de la génération...
           return;
         }
 
-        // UI Loading State
         btnGenerate.disabled = true;
         btnText.textContent = "Génération...";
         btnSpinner.classList.remove("hidden");
@@ -480,24 +452,20 @@ Attente de la génération...
 
           const data = await response.json();
 
-          // Build MP3
           const audioBlob = b64toBlob(data.audio_base64, "audio/mpeg");
           const audioUrl = URL.createObjectURL(audioBlob);
           audioPlayer.src = audioUrl;
 
-          // Filename logic
           const dateStr = new Date().toISOString().slice(0, 10);
           downloadMp3.href = audioUrl;
-          downloadMp3.download = `hnpaper-${dateStr}.mp3`;
+          downloadMp3.download = `${dateStr}.mp3`;
 
-          // Build VTT
           const vttBlob = new Blob([data.vtt], { type: "text/vtt" });
           const vttUrl = URL.createObjectURL(vttBlob);
           downloadVtt.href = vttUrl;
-          downloadVtt.download = `hnpaper-${dateStr}.vtt`;
+          downloadVtt.download = `${dateStr}.vtt`;
           renderVttAndSetupHighlighting(data.vtt);
 
-          // Reveal Result
           showResult();
           statusEl.textContent = "✓ Terminé avec succès";
           statusEl.className = "text-sm font-medium text-emerald-500";
@@ -507,7 +475,7 @@ Attente de la génération...
           statusEl.className = "text-sm font-medium text-red-500";
         } finally {
           btnGenerate.disabled = false;
-          btnText.textContent = "Générer l'audio";
+          btnText.textContent = "Générer";
           btnSpinner.classList.add("hidden");
           btnIcon.classList.remove("hidden");
 
@@ -521,7 +489,6 @@ Attente de la génération...
         }
       }
 
-      // Base64 to Blob helper
       function b64toBlob(b64Data, contentType = "", sliceSize = 512) {
         const byteCharacters = atob(b64Data);
         const byteArrays = [];

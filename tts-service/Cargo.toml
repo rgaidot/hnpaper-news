@@ -1,5 +1,5 @@
 [package]
-name = "tts-service"
+name = "voxify"
 version = "0.1.0"
 edition = "2021"
 
@@ -29,5 +29,5 @@ base64 = "0.22"
 clap = { version = "4.5", features = ["derive"] }
 
 [[bin]]
-name = "tts-service"
+name = "voxify"
 path = "src/main.rs"
