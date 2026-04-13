@@ -47,13 +47,32 @@ const titleRegex = /^Actualités du\s+\d{2}\/\d{2}\/\d{4}\s+à\s+\d{2}:\d{2}/;
             </div>
           </div>
 
-          <p class="text-stone-700 font-serif text-base leading-relaxed mb-6 line-clamp-3">
-            {(post.body || "").split("---")[0]?.replace(/^#+\s/, "").trim()}
-          </p>
-
-          <div class="mt-auto relative z-10 pt-2">
+          <div class="mb-6 relative z-10">
             <TagList tags={post.data.tags} />
           </div>
+
+          {(() => {
+            const headings = (post.body || "").match(/^##\s+(.*)/gm);
+            if (!headings || headings.length === 0) return null;
+            return (
+              <ul class="list-none text-sm text-stone-600 mb-6 font-sans space-y-2 relative z-10">
+                {headings.map((h, index) => {
+                  const title = h.replace(/^##\s+/, '');
+                  return (
+                    <li class="relative pl-4 before:content-['•'] before:absolute before:left-0 before:text-stone-400">
+                      <a 
+                        href={`/news/${post.id}#section-${index + 1}`} 
+                        class="hover:text-stone-900 hover:underline decoration-stone-300 underline-offset-4 transition-colors line-clamp-2"
+                        title={title}
+                      >
+                        {title}
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            );
+          })()}
         </article>
       ))
     }
