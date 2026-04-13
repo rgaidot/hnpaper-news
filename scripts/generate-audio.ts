@@ -654,10 +654,13 @@ async function generateAudio() {
   // Write audio-index.json
   const dataDir = path.join(process.cwd(), "data");
   if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-  fs.writeFileSync(
-    path.join(dataDir, "audio-index.json"),
-    JSON.stringify(indexData, null, 2),
-  );
+  fs.writeFileSync(indexPath, JSON.stringify(indexData, null, 2));
+
+  // Upload index to R2 if client exists
+  if (s3) {
+    tui.info("R2", "Uploading audio-index.json to R2...");
+    await uploadToR2(s3, indexPath, "audio-index.json", "application/json");
+  }
 
   tui.stop();
   console.log(`\n━━━ Summary ━━━\n`);
