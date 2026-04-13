@@ -28,6 +28,8 @@ pub struct SynthesizeResponse {
 pub async fn start_server(port: u16) -> anyhow::Result<()> {
     let app = Router::new()
         .route("/synthesize", post(handle_synthesize))
+        .nest_service("/style.css", ServeFile::new("style.css"))
+        .nest_service("/script.js", ServeFile::new("script.js"))
         .fallback_service(ServeFile::new("index.html"))
         .layer(CorsLayer::permissive());
 
