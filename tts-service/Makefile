@@ -8,8 +8,6 @@ IMAGE := $(APP):$(GIT_SHA)
 install:
 	cargo fetch
 
-# === Commandes Cargo (Développement local) ===
-
 dev:
 	cargo run -- serve -p 3000
 
@@ -24,8 +22,6 @@ lint:
 
 clean:
 	cargo clean
-
-# === Commandes Podman ===
 
 build: 
 	podman build -t ${IMAGE} .
@@ -44,7 +40,5 @@ podman-run:
 		-v $(PWD)/data:/app/data \
 		${IMAGE}
 
-# Permet de générer l'audio via podman
-# Exemple: make podman-generate ARGS="--force"
 podman-generate:
 	podman run --rm -it -v $(PWD)/data:/app/data ${IMAGE} ${ARGS}
