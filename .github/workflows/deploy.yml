@@ -37,6 +37,9 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Create data/audio directory for symlink
+        run: mkdir -p data/audio
+
       - name: Install, build, and upload your site
         uses: withastro/action@v2
         with:
