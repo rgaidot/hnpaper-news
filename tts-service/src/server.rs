@@ -1,8 +1,9 @@
 use axum::{
     extract::Json,
-    routing::post,
+    routing::{get, post},
     Router,
-    response::IntoResponse,
+    response::{Html, IntoResponse},
+    http::header,
 };
 use base64::{engine::general_purpose, Engine as _};
 use serde::{Deserialize, Serialize};
@@ -12,7 +13,6 @@ use crate::config::VOICE;
 use edge_tts_rust::{EdgeTtsClient, SpeakOptions, Boundary};
 use std::net::SocketAddr;
 use tower_http::cors::CorsLayer;
-use tower_http::services::ServeFile;
 
 #[derive(Deserialize)]
 pub struct SynthesizeRequest {
@@ -28,9 +28,14 @@ pub struct SynthesizeResponse {
 pub async fn start_server(port: u16) -> anyhow::Result<()> {
     let app = Router::new()
         .route("/synthesize", post(handle_synthesize))
-        .nest_service("/style.css", ServeFile::new("style.css"))
-        .nest_service("/script.js", ServeFile::new("script.js"))
-        .fallback_service(ServeFile::new("index.html"))
+        .route("/", get(|| async { Html(include_str!("../index.html")) }))
+        .route("/index.html", get(|| async { Html(include_str!("../index.html")) }))
+        .route("/style.css", get(|| async { 
+            ([(header::CONTENT_TYPE, "text/css")], include_str!("../style.css"))
+        }))
+        .route("/script.js", get(|| async { 
+            ([(header::CONTENT_TYPE, "application/javascript")], include_str!("../script.js"))
+        }))
         .layer(CorsLayer::permissive());
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
