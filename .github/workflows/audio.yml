@@ -27,16 +27,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: tts-service -> target
+          workspaces: voxify -> target
 
       - name: Build voxify
-        run: cargo build --release --manifest-path tts-service/Cargo.toml
+        run: cargo build --release --manifest-path voxify/Cargo.toml
 
       - name: Generate Audio
         run: |
@@ -44,7 +52,7 @@ jobs:
           if [ "${{ github.event.inputs.force }}" = "true" ]; then
             FLAGS="--force"
           fi
-          ./tts-service/target/release/voxify $FLAGS
+          bun run scripts/generate-audio.ts $FLAGS
 
       - name: Upload audio index to R2
         run: |
