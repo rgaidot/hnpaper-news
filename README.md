@@ -5,7 +5,7 @@ Welcome to the **HNPaper News** repository, an automated news archive from [HNPa
 ## ✨ Features
 
 - **Daily Summaries**: Automated archives of HNPaper news.
-- **Audio Player (TTS)**: Integrated text-to-speech functionality to listen to articles. MP3 audio files are automatically generated for each article by the Rust `tts-service` (and TypeScript fallback scripts), which are then used by the TTS player and for Google Cast.
+- **Audio Player (TTS)**: Integrated text-to-speech functionality to listen to articles. MP3 audio files are automatically generated for each article by the Rust `voxify` CLI, which are then used by the TTS player and for Google Cast.
 - **Word-Level Highlighting**: VTT subtitles enable per-word highlighting during audio playback.
 - **Google Cast Support**: Stream article audio to Google Cast devices (e.g., Google Home, Chromecast) with subtitle support.
 - **Podcast Feed**: RSS feed that exposes every article with an MP3 enclosure.
@@ -46,7 +46,7 @@ Welcome to the **HNPaper News** repository, an automated news archive from [HNPa
 │   ├── scripts/      # Client-side scripts (TTS, Navigation)
 │   ├── styles/       # Global CSS
 │   └── utils/        # Shared helpers (dates, reading time, audio paths)
-├── tts-service/      # Rust backend for high-performance audio generation
+├── voxify/           # Rust backend for high-performance audio generation
 ├── astro.config.mjs  # Astro configuration
 ├── makefile          # Shortcuts for build and deployment
 ├── nginx.conf        # Optimized Nginx configuration
@@ -61,10 +61,8 @@ Welcome to the **HNPaper News** repository, an automated news archive from [HNPa
 ```mermaid
 flowchart TD
   A[Markdown<br/>data/news/*.md] --> B[scripts/generate-audio.ts]
-  B --> C[Edge TTS<br/>node-edge-tts]
-  B --> D[FFmpeg/ffprobe<br/>durations + concat]
+  B --> C[voxify<br/>Rust TTS CLI]
   C --> E[data/audio/*.mp3 + *.vtt<br/>or Cloudflare R2]
-  D --> E
   B --> IDX[data/audio-index.json]
   E --> F[Astro pages]
   IDX --> F
@@ -73,6 +71,7 @@ flowchart TD
   F --> I["/podcast.xml"]
   F --> J["/news/[...page]"]
   F --> K["/tags/[tag]/[...page]"]
+  F --> M["/list/[...page]"]
   F --> L["/"]
 ```
 
@@ -92,12 +91,10 @@ flowchart TD
 flowchart TD
   Start([Start generation]) --> ReadMD[Read Markdown files]
   ReadMD --> CheckExisting{Check existing<br/>R2 or Local?}
-  CheckExisting -->|Missing| CleanText[Clean & Chunk Text]
+  CheckExisting -->|Missing| ExecVoxify[Execute Voxify]
   CheckExisting -->|Exists| Skip[Skip file]
   Skip --> Index
-  CleanText --> TTS[Edge TTS: Generate audio chunks]
-  TTS --> Concat[FFmpeg: Concat MP3 & create VTT]
-  Concat --> Storage{Upload to R2?}
+  ExecVoxify --> Storage{Upload to R2?}
   Storage -- Yes --> R2[Upload MP3 & VTT to Cloudflare R2<br/>Remove local files]
   Storage -- No --> Local[Keep in data/audio/]
   R2 --> Index[Add to audio-index.json<br/>with file size]
@@ -110,8 +107,8 @@ flowchart TD
 flowchart TD
   Push([Push to main/feat]) --> Checkout[Checkout code]
   Checkout --> SetupBun[Setup Bun & Install dependencies]
-  SetupBun --> SetupFFmpeg[Install FFmpeg]
-  SetupFFmpeg --> GenAudio["Generate Audio & Index<br/>(using R2 secrets)"]
+  SetupBun --> SetupRust[Setup Rust & Cache]
+  SetupRust --> GenAudio["Generate Audio & Index<br/>(using R2 secrets)"]
   GenAudio --> AstroBuild["Astro Build<br/>& Pagefind Indexing"]
   AstroBuild --> UploadArtifact[Upload Artifact to GH Pages]
   UploadArtifact --> Deploy([Deploy to GitHub Pages environment])
@@ -122,7 +119,7 @@ flowchart TD
 Prerequisites:
 
 - [Bun](https://bun.sh) installed.
-- `ffmpeg` + `ffprobe` available in PATH (audio generation uses them).
+- [Rust](https://www.rust-lang.org) (Cargo) available in PATH (audio generation uses `voxify`).
 
 1.  **Install dependencies**
 
@@ -149,7 +146,7 @@ Prerequisites:
 
 4.  **Generate Audio Files**
 
-    The project automatically generates `.mp3` audio files and `.vtt` subtitles for each article. This step requires an internet connection because `node-edge-tts` uses Microsoft Edge TTS voices.
+    The project automatically generates `.mp3` audio files and `.vtt` subtitles for each article. This step requires an internet connection because `voxify` uses Microsoft Edge TTS voices.
 
     **Cloudflare R2 Storage Integration:**
     To avoid excessive storage on GitHub and speed up generation times, audio files are synced to a Cloudflare R2 bucket. Set the following environment variables (or `.env` file locally):
@@ -165,6 +162,17 @@ Prerequisites:
 
     ```bash
     make generate-audio
+    ```
+
+    **Targeted Generation:**
+    You can generate audio for specific articles by passing their paths or filenames as arguments:
+
+    ```bash
+    # For a specific file
+    bun run scripts/generate-audio.ts data/news/2026-04-14-1351.md
+
+    # For multiple files
+    bun run scripts/generate-audio.ts data/news/file1.md data/news/file2.md
     ```
 
     To force regeneration of all audio files (even if they already exist):
@@ -309,7 +317,7 @@ Widgets to create:
 Deployment is automated via **GitHub Actions**.
 
 - On every push to the `main` branch, the workflow `.github/workflows/deploy.yml` runs.
-- It automatically installs `ffmpeg`, fetches missing audio from Cloudflare R2 (or generates it), builds the Astro site with Pagefind indexing, and deploys everything to the GitHub Pages environment.
+- It compiles `voxify`, fetches missing audio from Cloudflare R2 (or generates it), builds the Astro site with Pagefind indexing, and deploys everything to the GitHub Pages environment.
 
 ### Docker / Podman & Nginx (Manual/Private)
 
@@ -349,13 +357,12 @@ The project includes a `Dockerfile` and an optimized `nginx.conf` for serving th
 
 ### `scripts/generate-audio.ts`
 
-This script automates the creation of MP3 audio files and VTT subtitles from the Markdown articles. The complete flow is as follows:
-1.  **Parse Markdown**: Reads articles from `data/news/` and extracts the frontmatter title and body content.
-2.  **Clean & Chunk**: Strips Markdown formatting, links, and specific tags to create clean plain text. Splits the text into manageable chunks (max 2000 chars) to respect TTS API limits.
-3.  **Generate Audio (Edge TTS)**: Calls the Microsoft Edge TTS API (`node-edge-tts`) to generate audio segments and word-level timestamp JSONs.
-4.  **Concatenate & Convert**: Uses `ffmpeg` and `ffprobe` to measure durations, concatenate audio chunks into a single `.mp3` file, and convert the JSON timestamps into a valid WebVTT (`.vtt`) subtitle format.
-5.  **Cloud Storage (Optional)**: If Cloudflare R2 credentials are provided, uploads the `.mp3` and `.vtt` files to the bucket and removes them locally.
-6.  **Index Generation**: Updates `data/audio-index.json` with the final file sizes, which is used by the site to display audio capabilities and populate RSS feed enclosures.
+This script acts as the orchestrator for generating MP3 audio files and VTT subtitles from the Markdown articles. The heavy lifting is delegated to the `voxify` Rust CLI. The complete flow is as follows:
+1.  **Parse Markdown & Identify Changes**: Reads articles from `data/news/`, cleans the Markdown, and hashes the content to compare against `data/audio-index.json`.
+2.  **Filter**: Skips generation if the hash hasn't changed and the audio files already exist locally or on Cloudflare R2.
+3.  **Execute Voxify**: Compiles (if needed) and runs the `voxify` CLI. Voxify handles the complex tasks of text chunking, calling the Edge TTS API concurrently, concatenating segments, and generating `.vtt` subtitles directly in memory.
+4.  **Cloud Storage (Optional)**: If Cloudflare R2 credentials are provided, the script uploads the `.mp3` and `.vtt` files generated by `voxify` to the bucket and removes them locally.
+5.  **Index Update**: Updates `data/audio-index.json` with the final file sizes and content hashes.
 
 ### `scripts/release.sh`
 
@@ -394,12 +401,16 @@ tags: [news]
 
 ### Audio Index (`data/audio-index.json`)
 
-When the audio generation script (`scripts/generate-audio.ts`) runs, it produces an index mapping each article's filename (without the `.md` extension) to metadata about its generated audio file (such as its `size` in bytes). This file is utilized by the Astro pages to efficiently determine if an audio version of an article is available and to expose its size for the RSS podcast feed (`/podcast.xml`).
+When the audio generation script (`scripts/generate-audio.ts`) runs, it produces an index mapping each article's filename (without the `.md` extension) to metadata about its generated audio file. It stores two key pieces of information:
+
+1.  **`size` (in bytes)**: Utilized by the Astro pages to efficiently determine if an audio version of an article is available and to expose its file size for the RSS podcast feed (`/podcast.xml`).
+2.  **`hash`**: An MD5 hash of the *cleaned* text content. The orchestration script uses this hash to detect whether the source text of an article has been modified since the last run. If the hash hasn't changed, the script skips the costly TTS generation process, drastically speeding up CI execution.
 
 ```json
 {
   "2026-01-27-1400": {
-    "size": 420512
+    "size": 420512,
+    "hash": "e6a0cb5d3a52e0081079d856d333dc1b"
   }
 }
 ```
