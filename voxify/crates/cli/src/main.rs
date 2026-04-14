@@ -47,7 +47,7 @@ async fn process_file(
 
     let content = tokio::fs::read_to_string(&file_path).await?;
 
-    let (text_to_read, _content_hash) = tokio::task::spawn_blocking(move || {
+    let (text_to_read, content_hash) = tokio::task::spawn_blocking(move || {
         let matter = Matter::<YAML>::new();
         let parsed = matter.parse(&content);
 
@@ -68,6 +68,17 @@ async fn process_file(
         (text, hash)
     })
     .await?;
+
+    let hash_path = output_dir.join(&filename).with_extension("hash");
+    if hash_path.exists() && audio_path.exists() && vtt_path.exists() {
+        if let Ok(existing_hash) = tokio::fs::read_to_string(&hash_path).await {
+            if existing_hash.trim() == content_hash {
+                progress.increment_success(0); // Elapsed time is 0 for cached
+                progress.log_success(&filename, "Skipped (cached)");
+                return Ok(());
+            }
+        }
+    }
 
     let start_time = std::time::Instant::now();
 
@@ -121,6 +132,8 @@ async fn process_file(
         let vtt_content = audio::json_to_vtt(&all_subtitles);
         tokio::fs::write(&vtt_path, vtt_content).await?;
     }
+
+    tokio::fs::write(&hash_path, &content_hash).await?;
 
     progress.increment_success(start_time.elapsed().as_millis() as u64);
     progress.log_success(

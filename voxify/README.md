@@ -17,6 +17,7 @@ The logical heart of the project. It is interface-agnostic and handles:
 ### 2. `voxify` (CLI)
 A powerful command-line tool for batch processing:
 - Processing of local Markdown files.
+- Smart caching system using `.hash` files to skip unmodified content and save time.
 - Multi-level progress bars and performance statistics.
 - Concurrent processing support for ultra-fast execution.
 - Flexible configuration (voice selection, output directory).
