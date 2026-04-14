@@ -135,7 +135,7 @@ function hideResult() {
 async function generateTTS() {
   const markdown = markdownEl.value.trim();
   if (!markdown) {
-    statusEl.textContent = "⚠️ Veuillez saisir du texte.";
+    statusEl.textContent = "⚠️ Please enter some text.";
     statusEl.classList.replace("text-slate-500", "text-amber-500");
     setTimeout(() => {
       statusEl.textContent = "";
@@ -145,11 +145,11 @@ async function generateTTS() {
   }
 
   btnGenerate.disabled = true;
-  btnText.textContent = "Génération...";
+  btnText.textContent = "Generating...";
   btnSpinner.classList.remove("hidden");
   btnIcon.classList.add("hidden");
 
-  statusEl.textContent = "Synthèse en cours...";
+  statusEl.textContent = "Synthesis in progress...";
   statusEl.className = "text-sm font-medium text-indigo-500";
 
   hideResult();
@@ -161,7 +161,7 @@ async function generateTTS() {
       body: JSON.stringify({ markdown }),
     });
 
-    if (!response.ok) throw new Error(`Erreur ${response.status}`);
+    if (!response.ok) throw new Error(`Error ${response.status}`);
 
     const data = await response.json();
 
@@ -180,15 +180,17 @@ async function generateTTS() {
     renderVttAndSetupHighlighting(data.vtt);
 
     showResult();
-    statusEl.textContent = "✓ Terminé avec succès";
+    statusEl.textContent = "✓ Completed successfully";
     statusEl.className = "text-sm font-medium text-emerald-500";
   } catch (error) {
     console.error(error);
-    statusEl.textContent = `Erreur: Serveur injoignable`;
+    statusEl.textContent = error.message.includes("fetch") 
+      ? "Error: Server unreachable" 
+      : error.message;
     statusEl.className = "text-sm font-medium text-red-500";
   } finally {
     btnGenerate.disabled = false;
-    btnText.textContent = "Générer";
+    btnText.textContent = "Generate";
     btnSpinner.classList.add("hidden");
     btnIcon.classList.remove("hidden");
 

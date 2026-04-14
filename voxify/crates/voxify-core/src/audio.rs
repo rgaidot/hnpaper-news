@@ -39,11 +39,14 @@ pub async fn synthesize_audio(
     options: &SpeakOptions,
     text: &str,
     current_time_offset: u64,
-) -> anyhow::Result<(Vec<u8>, Vec<SubtitleItem>)> {
-    let timeout_duration = std::time::Duration::from_secs(30);
+) -> crate::error::Result<(Vec<u8>, Vec<SubtitleItem>)> {
+    let timeout_secs = 30;
+    let timeout_duration = std::time::Duration::from_secs(timeout_secs);
+    
     let res = tokio::time::timeout(timeout_duration, tts.synthesize(text, options.clone()))
         .await
-        .map_err(|_| anyhow::anyhow!("TTS synthesis timed out after 30s"))??;
+        .map_err(|_| crate::error::VoxifyError::Timeout(timeout_secs))?
+        .map_err(|e| crate::error::VoxifyError::TtsFailed(e.to_string()))?;
 
     let mut subtitles = Vec::new();
     let mut previous_max_offset = 0;

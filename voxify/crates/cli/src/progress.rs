@@ -4,7 +4,6 @@ use std::time::Instant;
 
 pub struct ProgressStats {
     pub success: usize,
-    pub skipped: usize,
     pub failed: usize,
 }
 
@@ -48,7 +47,6 @@ impl ProgressManager {
             global_bar,
             stats: Arc::new(Mutex::new(ProgressStats {
                 success: 0,
-                skipped: 0,
                 failed: 0,
             })),
             total_files,
@@ -62,12 +60,6 @@ impl ProgressManager {
         let mut stats = self.stats.lock().unwrap();
         stats.success += 1;
         self.completion_times.lock().unwrap().push(elapsed_ms);
-        self.update_global_bar(&stats);
-    }
-
-    pub fn increment_skipped(&self) {
-        let mut stats = self.stats.lock().unwrap();
-        stats.skipped += 1;
         self.update_global_bar(&stats);
     }
 
@@ -90,20 +82,8 @@ impl ProgressManager {
         ));
     }
 
-    pub fn log_skipped(&self, filename: &str) {
-        if self.is_ci {
-            println!("  - {}: Already up to date", filename);
-            return;
-        }
-        let _ = self.multi.println(format!(
-            "  {} {}: Already up to date",
-            console::style("-").dim(),
-            console::style(filename).dim()
-        ));
-    }
-
     fn update_global_bar(&self, stats: &ProgressStats) {
-        let current = stats.success + stats.skipped + stats.failed;
+        let current = stats.success + stats.failed;
         self.global_bar.set_position(current as u64);
 
         let times = self.completion_times.lock().unwrap();
@@ -117,8 +97,8 @@ impl ProgressManager {
         };
 
         let msg = format!(
-            "✔ {} – {} ✘ {}{}",
-            stats.success, stats.skipped, stats.failed, eta_str
+            "✔ {} ✘ {}{}",
+            stats.success, stats.failed, eta_str
         );
         self.global_bar.set_message(msg);
     }
@@ -155,14 +135,13 @@ impl ProgressManager {
         let elapsed_ms = self.global_start.elapsed().as_millis() as u64;
         println!("\n━━━ Summary ━━━\n");
         println!("  ✔ Success  : {}", stats.success);
-        println!("  – Skipped  : {}", stats.skipped);
         println!("  ✘ Failed   : {}\n", stats.failed);
         println!("  Total time : {}", format_duration(elapsed_ms));
 
         let times = self.completion_times.lock().unwrap();
         if !times.is_empty() {
             let avg_ms: u64 = times.iter().sum::<u64>() / (times.len() as u64);
-            println!("  Avg/article: {}", format_duration(avg_ms));
+            println!("  Avg/file   : {}", format_duration(avg_ms));
         }
     }
 }

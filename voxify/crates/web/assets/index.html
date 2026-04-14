@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" class="antialiased">
+<html lang="en" class="antialiased">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -31,8 +31,7 @@
           <span class="gradient-text">voxify</span>
         </h1>
         <p class="text-lg text-slate-500 max-w-2xl mx-auto font-medium">
-          Transformez vos contenu markdown en audio avec les sous-titres
-          synchronisés au format VTT
+          Transform your Markdown content into audio with synchronized subtitles in VTT format
         </p>
       </header>
 
@@ -51,7 +50,7 @@
             rows="10"
             oninput="updateButtonState()"
             class="w-full p-6 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-mono text-sm leading-relaxed text-slate-700 shadow-inner resize-y"
-            placeholder="Collez votre article Markdown ici..."
+            placeholder="Paste your Markdown article here..."
           ></textarea>
         </section>
 
@@ -68,7 +67,7 @@
               onclick="clearText()"
               class="flex-1 sm:flex-none px-5 py-3 rounded-xl font-semibold text-slate-600 hover:bg-slate-200/50 hover:text-slate-900 transition-all duration-200 cursor-pointer"
             >
-              Effacer
+              Clear
             </button>
             <button
               onclick="generateTTS()"
@@ -76,7 +75,7 @@
               disabled
               class="flex-1 sm:flex-none relative overflow-hidden bg-slate-900 hover:bg-black text-white px-8 py-3 rounded-xl font-semibold shadow-lg shadow-slate-900/20 hover:shadow-slate-900/30 transition-all duration-300 flex items-center justify-center gap-3 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:grayscale-[0.5] group"
             >
-              <span id="btn-text">Générer</span>
+              <span id="btn-text">Generate</span>
               <div
                 id="btn-spinner"
                 class="hidden w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"
@@ -136,7 +135,7 @@
                     </svg>
                   </div>
                   <span class="text-sm tracking-wide"
-                    >Télécharger l'Audio (MP3)</span
+                    >Download Audio (MP3)</span
                   >
                 </div>
                 <svg
@@ -177,7 +176,7 @@
                     </svg>
                   </div>
                   <span class="text-sm tracking-wide"
-                    >Télécharger les Sous-titres (VTT)</span
+                    >Download Subtitles (VTT)</span
                   >
                 </div>
                 <svg
@@ -215,7 +214,7 @@
                 class="text-slate-300 text-[13px] leading-relaxed font-mono h-[300px] overflow-y-auto pb-4 scroll-smooth selection:bg-indigo-500/50 selection:text-white"
                 tabindex="0"
               >
-Attente de la génération...
+Waiting for generation...
                         </pre
               >
               <div

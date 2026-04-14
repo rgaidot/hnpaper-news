@@ -1,0 +1,17 @@
+[package]
+name = "voxify"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+voxify-core = { path = "../voxify-core" }
+tokio.workspace = true
+indicatif.workspace = true
+console.workspace = true
+clap.workspace = true
+anyhow.workspace = true
+futures.workspace = true
+gray_matter.workspace = true
+edge-tts-rust.workspace = true
+dotenvy.workspace = true
+rustls.workspace = true

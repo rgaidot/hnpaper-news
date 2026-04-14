@@ -1,4 +1,4 @@
-.PHONY: install build publish push dev test format lint clean podman-run podman-generate
+.PHONY: install build publish push dev test format lint clean podman-run podman-cli
 
 APP := voxify
 REGISTRY := 192.168.7.70:32768
@@ -9,16 +9,19 @@ install:
 	cargo fetch
 
 dev:
-	cargo run -- serve -p 3000
+	cargo run --bin web
+
+dev-cli:
+	cargo run --bin voxify -- $(ARGS)
 
 test:
-	cargo test
+	cargo test --workspace
 
 format:
-	cargo fmt
+	cargo fmt --all
 
 lint:
-	cargo clippy -- -D warnings
+	cargo clippy --workspace -- -D warnings
 
 clean:
 	cargo clean
@@ -35,10 +38,9 @@ push:
 	podman push ${REGISTRY}/${APP}:latest
 
 podman-run:
-	@echo "Lancement du conteneur ${IMAGE} sur le port 3000..."
-	podman run --rm -it -p 3000:3000 \
-		-v $(PWD)/data:/app/data \
-		${IMAGE}
+	@echo "Starting web server container ${IMAGE} on port 3000..."
+	podman run --rm -it -p 3000:3000 ${IMAGE}
 
-podman-generate:
-	podman run --rm -it -v $(PWD)/data:/app/data ${IMAGE} ${ARGS}
+podman-cli:
+	@echo "Running CLI from container..."
+	podman run --rm -it -v $(PWD):/app ${IMAGE} voxify $(ARGS)
