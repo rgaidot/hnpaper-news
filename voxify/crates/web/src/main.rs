@@ -7,9 +7,9 @@ use axum::{
 };
 use base64::{engine::general_purpose, Engine as _};
 use serde::{Deserialize, Serialize};
-use crate::audio::{synthesize_audio, json_to_vtt};
-use crate::text::{chunk_text, clean_markdown};
-use crate::config::VOICE;
+use voxify_core::audio::{synthesize_audio, json_to_vtt};
+use voxify_core::text::{chunk_text, clean_markdown};
+use voxify_core::config::get_config;
 use edge_tts_rust::{EdgeTtsClient, SpeakOptions, Boundary};
 use std::net::SocketAddr;
 use tower_http::cors::CorsLayer;
@@ -25,21 +25,31 @@ pub struct SynthesizeResponse {
     pub vtt: String,
 }
 
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let _ = rustls::crypto::ring::default_provider().install_default();
+    
+    // Determine port, default to 3000
+    let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string()).parse().unwrap_or(3000);
+    start_server(port).await
+}
+
 pub async fn start_server(port: u16) -> anyhow::Result<()> {
     let app = Router::new()
         .route("/synthesize", post(handle_synthesize))
-        .route("/", get(|| async { Html(include_str!("../index.html")) }))
-        .route("/index.html", get(|| async { Html(include_str!("../index.html")) }))
+        .route("/", get(|| async { Html(include_str!("../assets/index.html")) }))
+        .route("/index.html", get(|| async { Html(include_str!("../assets/index.html")) }))
         .route("/style.css", get(|| async { 
-            ([(header::CONTENT_TYPE, "text/css")], include_str!("../style.css"))
+            ([(header::CONTENT_TYPE, "text/css")], include_str!("../assets/style.css"))
         }))
         .route("/script.js", get(|| async { 
-            ([(header::CONTENT_TYPE, "application/javascript")], include_str!("../script.js"))
+            ([(header::CONTENT_TYPE, "application/javascript")], include_str!("../assets/script.js"))
         }))
         .layer(CorsLayer::permissive());
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
-    println!("🚀 Server starting on http://{}", addr);
+    println!("🚀 Server starting on http://localhost:{}", port);
+    println!("ℹ Binding to {}", addr);
     
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app).await?;
@@ -60,30 +70,33 @@ async fn handle_synthesize(
 }
 
 async fn process_synthesize(markdown: String) -> anyhow::Result<SynthesizeResponse> {
+    let cfg = get_config();
     let tts = EdgeTtsClient::new()?;
     let speech_config = SpeakOptions {
-        voice: VOICE.into(),
+        voice: cfg.voice.clone().into(),
         boundary: Boundary::Word,
         ..SpeakOptions::default()
     };
 
-    // Extract title and content like in main.rs
-    let matter = gray_matter::Matter::<gray_matter::engine::YAML>::new();
-    let parsed = matter.parse(&markdown);
-    
-    let title = parsed
-        .data
-        .as_ref()
-        .and_then(|data| data.deserialize::<crate::types::ArticleFrontMatter>().ok())
-        .and_then(|fm| fm.title)
-        .unwrap_or_default();
+    // Offload CPU-intensive tasks (parsing and cleaning) to spawn_blocking
+    let text_to_read = tokio::task::spawn_blocking(move || {
+        let matter = gray_matter::Matter::<gray_matter::engine::YAML>::new();
+        let parsed = matter.parse(&markdown);
+        
+        let title = parsed
+            .data
+            .as_ref()
+            .and_then(|data| data.deserialize::<voxify_core::types::ArticleFrontMatter>().ok())
+            .and_then(|fm| fm.title)
+            .unwrap_or_default();
 
-    let cleaned_content = clean_markdown(&parsed.content);
-    let text_to_read = if !title.is_empty() {
-        format!("{}. \n\n{}", title, cleaned_content)
-    } else {
-        cleaned_content
-    };
+        let cleaned_content = clean_markdown(&parsed.content);
+        if !title.is_empty() {
+            format!("{}. \n\n{}", title, cleaned_content)
+        } else {
+            cleaned_content
+        }
+    }).await?;
 
     let chunks = chunk_text(&text_to_read, 1200);
     
@@ -94,7 +107,7 @@ async fn process_synthesize(markdown: String) -> anyhow::Result<SynthesizeRespon
     for chunk in chunks {
         let (audio_bytes, mut subtitles) = synthesize_audio(&tts, &speech_config, &chunk, current_time_offset).await?;
         
-        let duration_ms = crate::audio::get_audio_duration_from_bytes(&audio_bytes);
+        let duration_ms = voxify_core::audio::get_audio_duration_from_bytes(&audio_bytes);
         final_audio.extend_from_slice(&audio_bytes);
         all_subtitles.append(&mut subtitles);
         current_time_offset += duration_ms;

@@ -51,7 +51,7 @@ fn get_regexes() -> &'static MarkdownRegexes {
         links_with_bracket: Regex::new(r#"\{([^\}]+)\}\[[^\]]+\]\([^)]+\)"#).unwrap(),
         links_standard: Regex::new(r#"\[([^\]]+)\]\([^\)]+\)"#).unwrap(),
         urls: Regex::new(r#"(https?:\/\/[^\s]+)"#).unwrap(),
-        html_tags: Regex::new(r#"<[^>]+>"#).unwrap(),
+        html_tags: Regex::new(r#"<[^>]*>"#).unwrap(),
         hn_source: RegexBuilder::new(
             r#"^[ \t]*[-*+]\s*[\*_]*(Discussion HN|Article source)[\*_]*.*$"#,
         )
@@ -100,9 +100,6 @@ pub fn clean_markdown(markdown: &str) -> String {
     text = text.replace("&", " et ");
 
     // 4. Nettoyage des caractères problématiques pour edge-tts
-    text = text.replace("<", "");
-    text = text.replace(">", "");
-
     text = text.replace("(", "");
     text = text.replace(")", "");
     text = text.replace("[", "");
@@ -135,10 +132,19 @@ pub fn clean_markdown(markdown: &str) -> String {
     text = r.multiple_newlines.replace_all(&text, "\n\n").to_string();
     text = r.unwanted_chars.replace_all(&text, " ").to_string();
 
+    // Remove double spaces
+    while text.contains("  ") {
+        text = text.replace("  ", " ");
+    }
+
     text.trim().to_string()
 }
 
 pub fn chunk_text(text: &str, max_length: usize) -> Vec<String> {
+    if text.is_empty() || max_length == 0 {
+        return Vec::new();
+    }
+
     if text.len() <= max_length {
         return vec![text.to_string()];
     }
@@ -149,15 +155,26 @@ pub fn chunk_text(text: &str, max_length: usize) -> Vec<String> {
     while start < text.len() {
         let remaining = &text[start..];
         if remaining.len() <= max_length {
-            if !remaining.trim().is_empty() {
-                chunks.push(remaining.trim().to_string());
+            let trimmed = remaining.trim();
+            if !trimmed.is_empty() {
+                chunks.push(trimmed.to_string());
             }
             break;
         }
         
+        // Find a safe UTF-8 character boundary
         let mut end_idx = max_length;
-        while !remaining.is_char_boundary(end_idx) {
+        while end_idx > 0 && !text.is_char_boundary(start + end_idx) {
             end_idx -= 1;
+        }
+        
+        // If we couldn't even find one character boundary within max_length, 
+        // we have to force it to at least one character.
+        if end_idx == 0 {
+            end_idx = 1;
+            while start + end_idx < text.len() && !text.is_char_boundary(start + end_idx) {
+                end_idx += 1;
+            }
         }
         
         let candidate = &remaining[..end_idx];
