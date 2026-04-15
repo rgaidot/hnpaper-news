@@ -248,19 +248,12 @@ async function generateAudio() {
     // Make sure voxify is built
     const voxifyPath = path.join(
       process.cwd(),
-      "voxify",
-      "target",
-      "release",
+      "bin",
       "voxify",
     );
     if (!fs.existsSync(voxifyPath)) {
-      console.log(
-        `${c.yellow}⚠ voxify binary not found. Attempting to build it...${c.reset}`,
-      );
-      Bun.spawnSync(
-        ["cargo", "build", "--release", "--manifest-path", "voxify/Cargo.toml"],
-        { stdout: "inherit", stderr: "inherit" },
-      );
+      console.error(`${c.red}✘ voxify binary not found in bin/voxify${c.reset}`);
+      process.exit(1);
     }
 
     const voxifyArgs = [
