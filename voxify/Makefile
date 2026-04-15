@@ -1,4 +1,4 @@
-.PHONY: install build publish push dev test format lint clean podman-run podman-cli
+.PHONY: install build publish push dev test format lint clean podman-run podman-cli package
 
 APP := voxify
 REGISTRY := 192.168.7.70:32768
@@ -38,9 +38,16 @@ push:
 	podman push ${REGISTRY}/${APP}:latest
 
 podman-run:
-	@echo "Starting web server container ${IMAGE} on port 3000..."
 	podman run --rm -it -p 3000:3000 ${IMAGE}
 
 podman-cli:
-	@echo "Running CLI from container..."
 	podman run --rm -it -v $(PWD):/app ${IMAGE} voxify $(ARGS)
+
+package: clean
+	cargo build --release --workspace
+	mkdir -p dist/voxify-linux-amd64
+	cp target/release/voxify dist/voxify-linux-amd64/
+	cp target/release/web dist/voxify-linux-amd64/
+	cp voxify.toml.example dist/voxify-linux-amd64/
+	cp README.md dist/voxify-linux-amd64/
+	cd dist && tar -czvf voxify-linux-amd64.tar.gz voxify-linux-amd64/
