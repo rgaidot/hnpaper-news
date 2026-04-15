@@ -1,9 +1,14 @@
 name: Deploy Astro site to Pages
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Generate Audio"]
+    types:
+      - completed
     branches:
       - main
+  push:
+    branches:
       - "feat/*"
   pull_request:
     branches: [main]
@@ -20,6 +25,7 @@ concurrency:
 
 jobs:
   build:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     env:
       PUBLIC_POSTHOG_HOST: ${{ secrets.PUBLIC_POSTHOG_HOST }}
