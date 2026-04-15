@@ -55,7 +55,7 @@ const { title } = Astro.props;
         <CurrentDate fallback={formatFrenchDateLong(new Date())} />
         <div class="flex items-center gap-4">
           <Search />
-          <span><a href="/news" class="hover:underline">Archives</a></span>
+          <span><a href="/archives" class="hover:underline">Archives</a></span>
         </div>
       </div>
     </header>
@@ -71,7 +71,7 @@ const { title } = Astro.props;
         <nav class="mb-6 flex justify-center gap-6 font-bold uppercase tracking-widest text-stone-900">
           <a href="/" class="hover:underline">Accueil</a>
           <a href="/list" class="hover:underline">Liste</a>
-          <a href="/news" class="hover:underline">Archives</a>
+          <a href="/archives" class="hover:underline">Archives</a>
         </nav>
         <p class="mb-2">
           &copy; {new Date().getFullYear()} HNPaper News.

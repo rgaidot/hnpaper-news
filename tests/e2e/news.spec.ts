@@ -45,13 +45,13 @@ test("archives pagination navigates to the next and previous pages", async ({
   await expect(newsPage.nextPageLink).toBeVisible();
   await newsPage.nextPageLink.click();
 
-  await expect(page).toHaveURL(/\/news\/2\/?$/);
+  await expect(page).toHaveURL(/\/archives\/2\/?$/);
   await expect(page.locator("main")).toContainText("Page 2");
 
   await expect(newsPage.previousPageLink).toBeVisible();
   await newsPage.previousPageLink.click();
 
-  await expect(page).toHaveURL(/\/news\/?$/);
+  await expect(page).toHaveURL(/\/archives\/?$/);
   await expect(page.locator("main")).toContainText("Page 1");
 });
 
@@ -73,6 +73,6 @@ test("an intermediate article exposes previous and next links", async ({ page })
   const previousHref = await articlePage.previousArticleLink.getAttribute("href");
   const nextHref = await articlePage.nextArticleLink.getAttribute("href");
 
-  expect(previousHref).toMatch(/^\/news\//);
-  expect(nextHref).toMatch(/^\/news\//);
+  expect(previousHref).toMatch(/^\/archives\//);
+  expect(nextHref).toMatch(/^\/archives\//);
 });

@@ -8,11 +8,11 @@ export class NewsPage {
   }
 
   get firstArticleLink(): Locator {
-    return this.page.locator('a[href^="/news/"]').first();
+    return this.page.locator('a[href^="/archives/"]').first();
   }
 
   get middleArticleLink(): Locator {
-    return this.page.locator('a[href^="/news/"]').nth(1);
+    return this.page.locator('a[href^="/archives/"]').nth(1);
   }
 
   get firstTagLink(): Locator {
@@ -28,11 +28,11 @@ export class NewsPage {
   }
 
   get firstNewsCardLink(): Locator {
-    return this.page.locator('a[href^="/news/"]').first();
+    return this.page.locator('a[href^="/archives/"]').first();
   }
 
   async goto() {
-    await this.page.goto("/news");
+    await this.page.goto("/archives");
   }
 
   async getFirstArticlePath() {

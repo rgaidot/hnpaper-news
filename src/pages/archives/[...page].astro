@@ -2,7 +2,6 @@
 import { getCollection } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
 import TagList from '../../components/TagList.astro';
-import TagCloud from '../../components/TagCloud.astro';
 import { formatFrenchDateShort } from '../../utils/formatDate';
 import { formatReadingTimeMinutes, getReadingTimeMinutes } from '../../utils/readingTime';
 import { sortNewsByDateDesc } from '../../utils/news';
@@ -29,8 +28,6 @@ const { page } = Astro.props;
     >
   </div>
 
-  <TagCloud />
-
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
     {
       page.data.map((post) => (
@@ -53,7 +50,7 @@ const { page } = Astro.props;
           <ul class="mt-auto pt-6 border-t border-stone-100 text-sm font-sans font-bold tracking-wider text-stone-500 !mb-0 list-none pl-0">
             <li>
               <a
-                href={`/news/${post.id}`}
+                href={`/archives/${post.id}`}
                 class="text-stone-900 underline decoration-1 underline-offset-4 hover:decoration-2 transition-all font-medium"
               >
                 Lire <span aria-hidden="true">&rarr;</span>

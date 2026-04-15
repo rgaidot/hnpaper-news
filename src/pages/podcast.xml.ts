@@ -22,7 +22,7 @@ export const GET = async (context) => {
       title: post.data.title,
       pubDate: post.data.date,
       description: `Actualités du ${formatFrenchDateShort(post.data.date)}`,
-      link: `/news/${post.id}/`,
+      link: `/archives/${post.id}/`,
       enclosure: {
         url: audioUrl,
         length: audioSize,

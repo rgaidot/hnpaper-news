@@ -11,7 +11,7 @@ test("full page player exposes the article audio element", async ({ page }) => {
   const articlePath = await newsPage.getFirstArticlePath();
   expect(articlePath).toBeTruthy();
 
-  const slug = articlePath?.replace("/news/", "");
+  const slug = articlePath?.replace("/archives/", "");
   await playerPage.goto(slug!);
 
   await expect(playerPage.audioPlayer).toBeVisible();

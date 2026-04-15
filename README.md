@@ -12,7 +12,7 @@ Welcome to the **HNPaper News** repository, an automated news archive from [HNPa
 - **PWA Support**: Installable as a native app on mobile and desktop devices with offline caching capabilities and full Multi-Page Application (MPA) routing support.
 - **Share Section**: Click on the link icon next to any paragraph to copy a direct link to that specific section.
 - **Full-Page Player**: Dedicated `/player/:slug` route with an audio visualizer.
-- **Archives & Pagination**: `/news` paginated archive (12 items per page) and a compact `/list` view (30 items per page).
+- **Archives & Pagination**: `/archives` paginated archive (12 items per page) and a compact `/list` view (30 items per page).
 - **Tags & Navigation**: Support for reading and navigating articles by categories using a dedicated `/tags` route and tag clouds.
 - **Newspaper Design**: A clean, serif-focused aesthetic inspired by classic print media, utilizing a dynamic Masonry layout for article sections.
 - **Global Search (Pagefind)**: Integrated client-side search using Pagefind, enabling users to search articles with dynamic results, "Load More" pagination, and custom styling. The search index is automatically built and copied during the build process.
@@ -66,10 +66,10 @@ flowchart TD
   B --> IDX[data/audio-index.json]
   E --> F[Astro pages]
   IDX --> F
-  F --> G["/news/:slug/"]
+  F --> G["/archives/:slug/"]
   F --> H["/player/:slug/"]
   F --> I["/podcast.xml"]
-  F --> J["/news/[...page]"]
+  F --> J["/archives/[...page]"]
   F --> K["/tags/[tag]/[...page]"]
   F --> M["/list/[...page]"]
   F --> L["/"]

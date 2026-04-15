@@ -37,7 +37,7 @@ const titleRegex = /^Actualités du\s+\d{2}\/\d{2}\/\d{4}\s+à\s+\d{2}:\d{2}/;
           <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-x-4 mb-4 border-b border-stone-100 pb-4">
             <div class="flex-grow">
               <h3 class="font-serif text-xl font-bold text-stone-900 leading-tight">
-                <a href={`/news/${post.id}`} class="before:absolute before:inset-0 relative capitalize">
+                <a href={`/archives/${post.id}`} class="before:absolute before:inset-0 relative capitalize">
                   {formatFrenchDate(post.data.date)}
                 </a>
               </h3>
@@ -61,7 +61,7 @@ const titleRegex = /^Actualités du\s+\d{2}\/\d{2}\/\d{4}\s+à\s+\d{2}:\d{2}/;
                   return (
                     <li class="relative pl-4 before:content-['•'] before:absolute before:left-0 before:text-stone-400">
                       <a 
-                        href={`/news/${post.id}#section-${index + 1}`} 
+                        href={`/archives/${post.id}#section-${index + 1}`} 
                         class="hover:text-stone-900 hover:underline decoration-stone-300 underline-offset-4 transition-colors line-clamp-2"
                         title={title}
                       >
