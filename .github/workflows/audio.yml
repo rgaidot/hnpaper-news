@@ -35,17 +35,6 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Rust Cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: voxify -> target
-
-      - name: Build voxify
-        run: cargo build --release --manifest-path voxify/Cargo.toml
-
       - name: Generate Audio
         run: |
           FLAGS=""
