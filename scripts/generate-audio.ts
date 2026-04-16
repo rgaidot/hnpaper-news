@@ -1,4 +1,5 @@
 import {
+  GetObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
@@ -85,6 +86,28 @@ async function uploadToR2(
   });
   await s3.send(command);
 }
+
+async function downloadFromR2(s3: S3Client, key: string, outputPath: string) {
+  try {
+    const command = new GetObjectCommand({
+      Bucket: r2Config.bucketName,
+      Key: `audio/${key}`,
+    });
+    const response = await s3.send(command);
+    if (response.Body) {
+      const arr = await response.Body.transformToByteArray();
+      fs.writeFileSync(outputPath, arr);
+      return true;
+    }
+  } catch (err) {
+    // If it's a 404, we don't care much, it just means the file doesn't exist yet
+    if ((err as any).name !== "NoSuchKey") {
+      console.error(`Failed to download ${key} from R2:`, err);
+    }
+  }
+  return false;
+}
+
 function cleanMarkdown(markdown: string): string {
   let text = markdown;
 
@@ -125,7 +148,7 @@ function cleanMarkdown(markdown: string): string {
   text = text.replace(/<[^>]+>/g, "");
   text = text.replace(
     /^[ \t]*[-*+]\s*[\*_]*(Discussion HN|Article source)[\*_]*.*$/gm,
-    ""
+    "",
   );
   text = text.replace(/^#+\s+/gm, "");
   text = text.replace(/^[-*+]\s+/gm, "");
@@ -165,13 +188,20 @@ async function generateAudio() {
   const indexData: Record<string, { size: number; hash?: string }> = {};
 
   const indexPath = path.join(process.cwd(), "data", "audio-index.json");
+  const s3 = getS3Client();
+
+  if (s3) {
+    console.log(`ℹ R2: Connecting to Cloudflare R2...`);
+    console.log(`ℹ R2: Downloading audio-index.json...`);
+    await downloadFromR2(s3, "audio-index.json", indexPath);
+  }
+
   if (fs.existsSync(indexPath)) {
     try {
       Object.assign(indexData, JSON.parse(fs.readFileSync(indexPath, "utf-8")));
     } catch (err) {}
   }
 
-  const s3 = getS3Client();
   let r2Objects: Record<string, number> = {};
 
   console.log(
@@ -179,7 +209,6 @@ async function generateAudio() {
   );
 
   if (s3) {
-    console.log(`ℹ R2: Connecting to Cloudflare R2...`);
     r2Objects = await listR2Objects(s3);
     console.log(
       `ℹ R2: Found ${Object.keys(r2Objects).length} objects in bucket.`,
@@ -240,19 +269,19 @@ async function generateAudio() {
     indexData[filename] = { size: 0, hash: contentHash };
   }
 
+  let voxifyFailed = false;
+
   if (filesToProcess.length > 0) {
     console.log(
       `\nℹ Processing ${filesToProcess.length} file(s) with voxify...`,
     );
 
     // Make sure voxify is built
-    const voxifyPath = path.join(
-      process.cwd(),
-      "bin",
-      "voxify",
-    );
+    const voxifyPath = path.join(process.cwd(), "bin", "voxify");
     if (!fs.existsSync(voxifyPath)) {
-      console.error(`${c.red}✘ voxify binary not found in bin/voxify${c.reset}`);
+      console.error(
+        `${c.red}✘ voxify binary not found in bin/voxify${c.reset}`,
+      );
       process.exit(1);
     }
 
@@ -272,12 +301,8 @@ async function generateAudio() {
       stderr: "inherit",
     });
 
-    if (proc.exitCode !== 0) {
-      console.error(`${c.red}✘ voxify execution failed${c.reset}`);
-      process.exit(1);
-    }
-
-    // After successful generation, upload to R2 and update sizes
+    // Even if voxify failed, some files might have been generated
+    // Let's update indexData for what we have
     for (const file of filesToProcess) {
       const filename = path.basename(file, ".md");
       const audioPath = path.join(AUDIO_DIR, `${filename}.mp3`);
@@ -289,14 +314,24 @@ async function generateAudio() {
 
         if (s3) {
           console.log(`  ${c.cyan}↑${c.reset} Uploading ${filename} to R2...`);
-          await uploadToR2(s3, audioPath, `${filename}.mp3`, "audio/mpeg");
-          await uploadToR2(s3, vttPath, `${filename}.vtt`, "text/vtt");
+          try {
+            await uploadToR2(s3, audioPath, `${filename}.mp3`, "audio/mpeg");
+            await uploadToR2(s3, vttPath, `${filename}.vtt`, "text/vtt");
 
-          // Clean up local files if uploaded
-          fs.unlinkSync(audioPath);
-          fs.unlinkSync(vttPath);
+            // Clean up local files if uploaded
+            fs.unlinkSync(audioPath);
+            fs.unlinkSync(vttPath);
+          } catch (err) {
+            console.error(`Failed to upload ${filename} to R2:`, err);
+          }
         }
+        dataDir;
       }
+    }
+
+    if (proc.exitCode !== 0) {
+      console.error(`${c.red}✘ voxify execution failed${c.reset}`);
+      voxifyFailed = true;
     }
   }
 
@@ -309,6 +344,10 @@ async function generateAudio() {
   if (s3) {
     console.log(`\nℹ R2: Uploading audio-index.json to R2...`);
     await uploadToR2(s3, indexPath, "audio-index.json", "application/json");
+  }
+
+  if (voxifyFailed) {
+    process.exit(1);
   }
 
   console.log(`\n  ${c.green}✔${c.reset} Done.\n`);
