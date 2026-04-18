@@ -44,6 +44,10 @@ export default defineConfig({
               },
             },
           },
+          {
+            urlPattern: /\.(?:mp3|vtt)$/i,
+            handler: 'NetworkOnly',
+          },
         ],
         navigateFallback: null,
       },
