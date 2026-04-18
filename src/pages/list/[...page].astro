@@ -30,7 +30,7 @@ const titleRegex = /^Actualités du\s+\d{2}\/\d{2}\/\d{4}\s+à\s+\d{2}:\d{2}/;
     >
   </div>
 
-  <div class="flex flex-col gap-6 max-w-4xl mx-auto w-full">
+  <div class="flex flex-col gap-6 mx-auto w-full">
     {
       page.data.map((post) => (
         <article class="relative group w-full flex flex-col bg-white p-6 md:p-8 rounded-[1rem] shadow-sm border border-stone-200/80 hover:shadow-md hover:border-stone-300 transition-all text-left">
@@ -55,7 +55,7 @@ const titleRegex = /^Actualités du\s+\d{2}\/\d{2}\/\d{4}\s+à\s+\d{2}:\d{2}/;
             const headings = (post.body || "").match(/^##\s+(.*)/gm);
             if (!headings || headings.length === 0) return null;
             return (
-              <ul class="list-none text-sm text-stone-600 mb-6 font-sans space-y-2 relative z-10">
+              <ul class="list-none text-base mb-6 font-sans space-y-2 relative z-10">
                 {headings.map((h, index) => {
                   const title = h.replace(/^##\s+/, '');
                   return (
