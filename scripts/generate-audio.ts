@@ -292,8 +292,6 @@ async function generateAudio() {
       AUDIO_DIR,
       "--voice",
       VOICE,
-      "--parallel",
-      s3 ? "10" : "30",
     ];
 
     const proc = Bun.spawnSync(voxifyArgs, {
