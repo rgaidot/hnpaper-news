@@ -9,10 +9,17 @@ export async function blockThirdParty(page: Page) {
 }
 
 export function extractSearchTerm(text: string | null) {
+  const normalizeAccents = (str: string) =>
+    str
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "");
+
   const candidate =
     text
       ?.split(/\s+/)
-      .map((word) => word.replace(/[^\p{L}\p{N}]/gu, ""))
+      .map((word) =>
+        normalizeAccents(word).replace(/[^\p{L}\p{N}]/gu, "")
+      )
       .find((word) => word.length >= 6) ?? "actualite";
 
   return candidate.toLowerCase();
