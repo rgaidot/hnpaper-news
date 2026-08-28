@@ -2,7 +2,7 @@
 import { getCollection } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
 import TagList from '../../components/TagList.astro';
-import { formatFrenchDate } from '../../utils/formatDate';
+import { formatFrenchDateLong } from '../../utils/formatDate';
 import { formatReadingTimeMinutes, getReadingTimeMinutes } from '../../utils/readingTime';
 import { sortNewsByDateDesc } from '../../utils/news';
 
@@ -38,7 +38,7 @@ const titleRegex = /^Actualités du\s+\d{2}\/\d{2}\/\d{4}\s+à\s+\d{2}:\d{2}/;
             <div class="flex-grow">
               <h3 class="font-serif text-xl font-bold text-stone-900 leading-tight">
                 <a href={`/archives/${post.id}`} class="before:absolute before:inset-0 relative capitalize">
-                  {formatFrenchDate(post.data.date)}
+                  {formatFrenchDateLong(post.data.date)}
                 </a>
               </h3>
             </div>

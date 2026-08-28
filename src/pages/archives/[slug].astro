@@ -4,7 +4,7 @@ import TTSPlayer from '../../components/TTSPlayer.astro';
 import AudioPlayer from '../../components/AudioPlayer.astro';
 import TagList from '../../components/TagList.astro';
 import Layout from '../../layouts/Layout.astro';
-import { formatFrenchDate } from '../../utils/formatDate';
+import { formatFrenchDateLong } from '../../utils/formatDate';
 import { getReadingTimeMinutes } from '../../utils/readingTime';
 import { hasAudio } from '../../utils/audio';
 import { sortNewsByDateDesc } from '../../utils/news';
@@ -26,7 +26,7 @@ export async function getStaticPaths() {
 const { entry, nextPost, prevPost } = Astro.props;
 const { Content } = await render(entry);
 
-const formattedDate = formatFrenchDate(entry.data.date);
+const formattedDate = formatFrenchDateLong(entry.data.date);
 
 const readingTime = getReadingTimeMinutes(entry.body || "");
 

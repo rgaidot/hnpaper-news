@@ -4,7 +4,7 @@ import TTSPlayer from "../components/TTSPlayer.astro";
 import AudioPlayer from "../components/AudioPlayer.astro";
 import TagList from "../components/TagList.astro";
 import Layout from "../layouts/Layout.astro";
-import { formatFrenchDate } from "../utils/formatDate";
+import { formatFrenchDateLong } from "../utils/formatDate";
 import { getReadingTimeMinutes } from "../utils/readingTime";
 import { hasAudio } from "../utils/audio";
 import { getLatestNews, sortNewsByDateDesc } from "../utils/news";
@@ -19,7 +19,7 @@ if (latestPost) {
   const rendered = await render(latestPost);
   Content = rendered.Content;
 
-  formattedDate = formatFrenchDate(latestPost.data.date);
+  formattedDate = formatFrenchDateLong(latestPost.data.date);
 
   readingTime = getReadingTimeMinutes(latestPost.body || "");
 

@@ -3,7 +3,7 @@ import { getCollection } from 'astro:content';
 import LayoutPlayer from '../../layouts/LayoutPlayer.astro';
 import AudioPlayer from '../../components/AudioPlayer.astro';
 import VoiceVisualizer from '../../components/VoiceVisualizer.astro';
-import { formatFrenchDate } from '../../utils/formatDate';
+import { formatFrenchDateLong } from '../../utils/formatDate';
 
 export async function getStaticPaths() {
   const newsEntries = await getCollection('news');
@@ -15,7 +15,7 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 
-const formattedDate = formatFrenchDate(entry.data.date);
+const formattedDate = formatFrenchDateLong(entry.data.date);
 ---
 <LayoutPlayer title={`Lecture : ${entry.data.title}`}>
   <AudioPlayer title={entry.data.title} slug={entry.id} formattedDate={formattedDate} />
