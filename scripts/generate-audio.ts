@@ -5,6 +5,7 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import fs from "bun:fs";
+import os from "bun:os";
 import path from "bun:path";
 import fm from "front-matter";
 import { glob } from "glob";
@@ -12,6 +13,9 @@ import { glob } from "glob";
 const NEWS_DIR = "data/news";
 const AUDIO_DIR = "data/audio";
 const VOICE = "fr-FR-VivienneMultilingualNeural";
+// HN link lines are shown on the site but must not be read aloud (they are tts-ignore'd in the DOM)
+const HN_LINKS_REGEX =
+  /^[ \t]*[-*+]\s*[\*_]*(Discussion HN|Article source)[\*_]*.*$/gm;
 
 const c = {
   reset: "\x1b[0m",
@@ -149,7 +153,7 @@ function cleanMarkdown(markdown: string): string {
   text = text.replace(/(https?:\/\/[^\s]+)/g, "");
   text = text.replace(/<[^>]+>/g, "");
   text = text.replace(
-    /^[ \t]*[-*+]\s*[\*_]*(Discussion HN|Article source)[\*_]*.*$/gm,
+    HN_LINKS_REGEX,
     "",
   );
   text = text.replace(/^#+\s+/gm, "");
@@ -296,9 +300,21 @@ async function generateAudio() {
       process.exit(1);
     }
 
+    // voxify reads the raw markdown: hand it copies without the HN link lines
+    // (same basename, so outputs keep their name)
+    const voxifyInputDir = fs.mkdtempSync(path.join(os.tmpdir(), "voxify-"));
+    const voxifyInputs = filesToProcess.map((file) => {
+      const input = path.join(voxifyInputDir, path.basename(file));
+      fs.writeFileSync(
+        input,
+        fs.readFileSync(file, "utf-8").replace(HN_LINKS_REGEX, ""),
+      );
+      return input;
+    });
+
     const voxifyArgs = [
       voxifyPath,
-      ...filesToProcess,
+      ...voxifyInputs,
       "--output",
       AUDIO_DIR,
       "--voice",
@@ -309,6 +325,7 @@ async function generateAudio() {
       stdout: "inherit",
       stderr: "inherit",
     });
+    fs.rmSync(voxifyInputDir, { recursive: true, force: true });
 
     // Even if voxify failed, some files might have been generated
     // Let's update indexData for what we have
