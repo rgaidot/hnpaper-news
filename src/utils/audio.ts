@@ -33,11 +33,6 @@ export function getAudioUrl(siteUrl: string | URL, slug: string): string {
   // Use public R2 URL from env vars (either Vite/Astro style or standard process.env)
   const baseUrl = import.meta.env?.PUBLIC_R2_URL || process.env.PUBLIC_R2_URL || siteUrl;
   const base = baseUrl.toString().replace(/\/$/, "");
-  
-  // If no R2 URL is provided, fallback to the old local behavior for dev testing without R2
-  if (base === siteUrl.toString().replace(/\/$/, "")) {
-    return withAudioVersion(`${base}/audio/${slug}.mp3`, slug);
-  }
   return withAudioVersion(`${base}/audio/${slug}.mp3`, slug);
 }
 

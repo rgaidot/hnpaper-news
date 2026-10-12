@@ -83,6 +83,8 @@ async function uploadToR2(
     Key: `audio/${key}`,
     Body: fs.readFileSync(filePath),
     ContentType: contentType,
+    // Overwritten in place on regeneration: always revalidate (ETag) to avoid stale mp3/vtt pairs
+    CacheControl: "no-cache",
   });
   await s3.send(command);
 }
@@ -227,6 +229,7 @@ async function generateAudio() {
   }
 
   const filesToProcess: string[] = [];
+  const pendingHashes: Record<string, string> = {};
 
   for (const file of files) {
     const filename = path.basename(file, ".md");
@@ -272,17 +275,12 @@ async function generateAudio() {
       continue;
     }
 
-    // Mark for processing
+    // Mark for processing — the index entry is only updated once the audio is published
     filesToProcess.push(file);
-    // Temporarily store the hash
-    indexData[filename] = {
-      size: 0,
-      hash: contentHash,
-      generatedAt: Date.now(),
-    };
+    pendingHashes[filename] = contentHash;
   }
 
-  let voxifyFailed = false;
+  let failed = false;
 
   if (filesToProcess.length > 0) {
     console.log(
@@ -319,30 +317,43 @@ async function generateAudio() {
       const audioPath = path.join(AUDIO_DIR, `${filename}.mp3`);
       const vttPath = path.join(AUDIO_DIR, `${filename}.vtt`);
 
-      if (fs.existsSync(audioPath) && fs.existsSync(vttPath)) {
-        const audioSize = fs.statSync(audioPath).size;
-        indexData[filename].size = audioSize;
-
-        if (s3) {
-          console.log(`  ${c.cyan}↑${c.reset} Uploading ${filename} to R2...`);
-          try {
-            await uploadToR2(s3, audioPath, `${filename}.mp3`, "audio/mpeg");
-            await uploadToR2(s3, vttPath, `${filename}.vtt`, "text/vtt");
-
-            // Clean up local files if uploaded
-            fs.unlinkSync(audioPath);
-            fs.unlinkSync(vttPath);
-          } catch (err) {
-            console.error(`Failed to upload ${filename} to R2:`, err);
-          }
-        }
-        dataDir;
+      if (!fs.existsSync(audioPath) || !fs.existsSync(vttPath)) {
+        // Keep the previous index entry untouched so the next run retries
+        console.error(`${c.red}✘ ${filename}: mp3/vtt not generated${c.reset}`);
+        failed = true;
+        continue;
       }
+
+      const audioSize = fs.statSync(audioPath).size;
+
+      if (s3) {
+        console.log(`  ${c.cyan}↑${c.reset} Uploading ${filename} to R2...`);
+        try {
+          await uploadToR2(s3, audioPath, `${filename}.mp3`, "audio/mpeg");
+          await uploadToR2(s3, vttPath, `${filename}.vtt`, "text/vtt");
+
+          // Clean up local files if uploaded
+          fs.unlinkSync(audioPath);
+          fs.unlinkSync(vttPath);
+        } catch (err) {
+          // Drop the hash so the next run regenerates a consistent mp3/vtt pair
+          console.error(`Failed to upload ${filename} to R2:`, err);
+          if (indexData[filename]) delete indexData[filename].hash;
+          failed = true;
+          continue;
+        }
+      }
+
+      indexData[filename] = {
+        size: audioSize,
+        hash: pendingHashes[filename],
+        generatedAt: Date.now(),
+      };
     }
 
     if (proc.exitCode !== 0) {
       console.error(`${c.red}✘ voxify execution failed${c.reset}`);
-      voxifyFailed = true;
+      failed = true;
     }
   }
 
@@ -357,11 +368,14 @@ async function generateAudio() {
     await uploadToR2(s3, indexPath, "audio-index.json", "application/json");
   }
 
-  if (voxifyFailed) {
+  if (failed) {
     process.exit(1);
   }
 
   console.log(`\n  ${c.green}✔${c.reset} Done.\n`);
 }
 
-generateAudio().catch(console.error);
+generateAudio().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

@@ -47,7 +47,7 @@ jobs:
         run: mkdir -p data/audio
 
       - name: Download audio index from R2
-        run: curl -s -o data/audio-index.json ${{ env.PUBLIC_R2_URL }}/audio/audio-index.json
+        run: curl -fsS -o data/audio-index.json "${{ env.PUBLIC_R2_URL }}/audio/audio-index.json?t=$(date +%s)"
 
       - name: Install, build, and upload your site
         uses: withastro/action@v2

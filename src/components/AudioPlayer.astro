@@ -1,6 +1,6 @@
 ---
 import ArticleFloatingNav from './ArticleFloatingNav.astro';
-import { getAudioVersion, withAudioVersion } from '../utils/audio';
+import { getAudioVersion } from '../utils/audio';
 
 interface Props {
   title: string;
@@ -23,7 +23,7 @@ const audioBase = import.meta.env.PUBLIC_R2_URL ? `${import.meta.env.PUBLIC_R2_U
       id="audio-player"
       controls 
       class="flex-1 h-10 accent-stone-500 min-w-0"
-      src={withAudioVersion(audioBase, slug)}
+      src={audioVersion ? `${audioBase}?v=${audioVersion}` : audioBase}
     >
       Your browser does not support the audio element.
     </audio>

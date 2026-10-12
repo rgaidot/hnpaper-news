@@ -20,6 +20,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: audio
+  cancel-in-progress: false
+
 jobs:
   generate:
     runs-on: ubuntu-latest
@@ -47,15 +51,6 @@ jobs:
             FLAGS="--force"
           fi
           bun run scripts/generate-audio.ts $FLAGS ${{ github.event.inputs.files }}
-
-      - name: Upload audio index to R2
-        run: |
-          aws s3 cp data/audio-index.json s3://${{ env.R2_BUCKET_NAME }}/audio/audio-index.json \
-            --endpoint-url https://${{ env.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com \
-            --region auto
-        env:
-          AWS_ACCESS_KEY_ID: ${{ env.R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ env.R2_SECRET_ACCESS_KEY }}
 
       - name: Commit audio index updates
         run: |

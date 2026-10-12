@@ -45,7 +45,7 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: /\.(?:mp3|vtt)$/i,
+            urlPattern: ({ url }) => /\.(?:mp3|vtt)$/i.test(url.pathname),
             handler: 'NetworkOnly',
           },
         ],
