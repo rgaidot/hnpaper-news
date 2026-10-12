@@ -1,4 +1,6 @@
 ---
+import { getAudioVersion } from '../utils/audio';
+
 interface Props {
   title: string;
   slug: string;
@@ -6,9 +8,10 @@ interface Props {
 }
 
 const { title, slug, readingTime } = Astro.props;
+const audioVersion = getAudioVersion(slug);
 ---
 
-<div class="tts-player-container flex flex-wrap items-center gap-4 px-2 py-2" data-title={title} data-slug={slug}>
+<div class="tts-player-container flex flex-wrap items-center gap-4 px-2 py-2" data-title={title} data-slug={slug} data-audio-version={audioVersion}>
   
   <div class="flex items-center space-x-2">
     <button class="play-pause-tts p-2 rounded-full tts-button-style transition-colors duration-200" aria-label="Lancer la lecture" title="Lancer la lecture">

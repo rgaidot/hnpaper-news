@@ -185,7 +185,10 @@ async function generateAudio() {
     );
   const files =
     argsFiles.length > 0 ? argsFiles : await glob(`${NEWS_DIR}/*.md`);
-  const indexData: Record<string, { size: number; hash?: string }> = {};
+  const indexData: Record<
+    string,
+    { size: number; hash?: string; generatedAt?: number }
+  > = {};
 
   const indexPath = path.join(process.cwd(), "data", "audio-index.json");
   const s3 = getS3Client();
@@ -252,12 +255,18 @@ async function generateAudio() {
       console.log(
         `  ${c.dim}-${c.reset} ${c.dim}${filename}${c.reset}: Already up to date`,
       );
+      const generatedAt = indexData[filename]?.generatedAt;
       if (existsOnR2) {
-        indexData[filename] = { size: r2Objects[mp3Key], hash: contentHash };
+        indexData[filename] = {
+          size: r2Objects[mp3Key],
+          hash: contentHash,
+          generatedAt,
+        };
       } else if (existsLocally) {
         indexData[filename] = {
           size: fs.statSync(path.join(AUDIO_DIR, mp3Key)).size,
           hash: contentHash,
+          generatedAt,
         };
       }
       continue;
@@ -266,7 +275,11 @@ async function generateAudio() {
     // Mark for processing
     filesToProcess.push(file);
     // Temporarily store the hash
-    indexData[filename] = { size: 0, hash: contentHash };
+    indexData[filename] = {
+      size: 0,
+      hash: contentHash,
+      generatedAt: Date.now(),
+    };
   }
 
   let voxifyFailed = false;

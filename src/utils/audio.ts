@@ -5,6 +5,8 @@ import path from "node:path";
 export interface AudioIndexData {
   [slug: string]: {
     size: number;
+    hash?: string;
+    generatedAt?: number;
   };
 }
 
@@ -34,9 +36,20 @@ export function getAudioUrl(siteUrl: string | URL, slug: string): string {
   
   // If no R2 URL is provided, fallback to the old local behavior for dev testing without R2
   if (base === siteUrl.toString().replace(/\/$/, "")) {
-    return `${base}/audio/${slug}.mp3`;
+    return withAudioVersion(`${base}/audio/${slug}.mp3`, slug);
   }
-  return `${base}/audio/${slug}.mp3`;
+  return withAudioVersion(`${base}/audio/${slug}.mp3`, slug);
+}
+
+// Cache-busting version: changes on every (re)generation, falls back to the content hash
+export function getAudioVersion(slug: string): string {
+  const entry = getAudioIndex()[slug];
+  return entry?.generatedAt?.toString() ?? entry?.hash ?? "";
+}
+
+export function withAudioVersion(url: string, slug: string): string {
+  const version = getAudioVersion(slug);
+  return version ? `${url}?v=${version}` : url;
 }
 
 export function hasAudio(slug: string): boolean {

@@ -43,6 +43,7 @@ export class TTSController {
   private fullText: string = "";
   private titleText: string = "";
   private slug: string = "";
+  private audioVersion: string = "";
 
   private currentSentenceIndex: number = 0;
   private currentCharIndex: number = 0;
@@ -89,6 +90,7 @@ export class TTSController {
     }
     this.titleText = (this.container.getAttribute("data-title") || "") + ". ";
     this.slug = this.container.getAttribute("data-slug") || "";
+    this.audioVersion = this.container.getAttribute("data-audio-version") || "";
 
     this.audioElement = document.getElementById(
       "audio-player",
@@ -142,12 +144,16 @@ export class TTSController {
     });
   }
 
+  private versioned(url: string): string {
+    return this.audioVersion ? `${url}?v=${this.audioVersion}` : url;
+  }
+
   // ── VTT ───────────────────────────────────────────────────────────────────
 
   private loadVTT() {
     const r2Url = import.meta.env.PUBLIC_R2_URL;
     const baseUrl = r2Url ? r2Url.replace(/\/$/, "") : "";
-    fetch(`${baseUrl}/audio/${this.slug}.vtt`)
+    fetch(this.versioned(`${baseUrl}/audio/${this.slug}.vtt`))
       .then((res) => res.text())
       .then((text) => {
         this.parseVTT(text);
@@ -525,7 +531,7 @@ export class TTSController {
     const baseAudioUrl = r2Url ? r2Url.replace(/\/$/, "") : origin;
 
     const mediaInfo = new chrome.cast.media.MediaInfo(
-      `${baseAudioUrl}/audio/${this.slug}.mp3`,
+      this.versioned(`${baseAudioUrl}/audio/${this.slug}.mp3`),
       "audio/mpeg",
     );
     mediaInfo.streamType = chrome.cast.media.StreamType.BUFFERED;
@@ -540,7 +546,9 @@ export class TTSController {
       1,
       chrome.cast.media.TrackType.TEXT,
     );
-    track.trackContentId = `${baseAudioUrl}/audio/${this.slug}.vtt`;
+    track.trackContentId = this.versioned(
+      `${baseAudioUrl}/audio/${this.slug}.vtt`,
+    );
     track.trackContentType = "text/vtt";
     track.subtype = chrome.cast.media.TextTrackType.SUBTITLES;
     track.name = "Français";
